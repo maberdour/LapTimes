@@ -1,0 +1,794 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="LapTap for Coaches">
+<title>LapTap for Coaches</title>
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<style>
+  :root{
+    --bg:#000000;
+    --text:#ffffff;
+    --gap:16px;
+  }
+  *{box-sizing:border-box}
+  button, .card{
+    touch-action:manipulation;
+    -webkit-user-select:none;
+    user-select:none;
+  }
+  html, body{
+    margin:0;
+    height:100%;
+    background:var(--bg);
+    color:var(--text);
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    -webkit-tap-highlight-color:transparent;
+  }
+  body.timing-lock{
+    overflow:hidden;
+    height:100dvh;
+  }
+  h1{
+    margin:0;
+    font-size:clamp(28px,8vw,40px);
+    letter-spacing:-.03em;
+    font-weight:1000;
+  }
+  .screen{display:none}
+  .screen.show{display:flex}
+  .setup-screen{
+    flex-direction:column;
+    min-height:100dvh;
+    padding:14px 14px max(18px,env(safe-area-inset-bottom));
+  }
+  .setup-screen h1{margin-bottom:16px}
+  .field{
+    margin-bottom:14px;
+  }
+  .field label{
+    display:block;
+    margin-bottom:6px;
+    font-size:16px;
+    font-weight:800;
+  }
+  .field input,
+  .field select,
+  select{
+    width:100%;
+    min-height:56px;
+    border:3px solid #ffffff;
+    border-radius:12px;
+    background-color:#000000;
+    color:#ffffff;
+    font-size:22px;
+    font-weight:800;
+    padding:10px 12px;
+  }
+  .field select,
+  select{
+    padding:10px 56px 10px 12px;
+    appearance:none;
+    -webkit-appearance:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ffffff' d='M4 8l8 10 8-10z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:right 8px center;
+    background-size:40px 40px;
+  }
+  .custom-fields.hidden{display:none}
+  .rider-editor{
+    border:3px solid #ffffff;
+    border-radius:16px;
+    padding:12px;
+    margin-bottom:12px;
+    background:#0a0a0a;
+  }
+  .rider-editor.is-collapsed{
+    padding:8px 12px;
+  }
+  .rider-head{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .rider-editor.is-collapsed .rider-head{
+    margin-bottom:0;
+  }
+  .rider-toggle{
+    flex:1;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    min-height:48px;
+    min-width:0;
+    padding:0;
+    border:0;
+    background:transparent;
+    color:#ffffff;
+    font:inherit;
+    text-align:left;
+  }
+  .rider-swatch{
+    width:28px;
+    height:28px;
+    border:3px solid #ffffff;
+    border-radius:8px;
+    flex-shrink:0;
+  }
+  .rider-toggle-copy{
+    flex:1;
+    min-width:0;
+  }
+  .rider-head strong{
+    display:block;
+    font-size:20px;
+    font-weight:1000;
+  }
+  .rider-summary{
+    display:block;
+    font-size:15px;
+    font-weight:700;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .rider-editor:not(.is-collapsed) .rider-summary,
+  .rider-editor.is-collapsed .rider-body{
+    display:none;
+  }
+  .rider-chevron{
+    width:44px;
+    height:44px;
+    flex-shrink:0;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23ffffff' d='M4 8l8 10 8-10z'/%3E%3C/svg%3E");
+    background-repeat:no-repeat;
+    background-position:center;
+    background-size:40px 40px;
+  }
+  .rider-editor.is-collapsed .rider-chevron{
+    transform:rotate(-90deg);
+  }
+  .remove-rider{
+    min-height:48px;
+    min-width:48px;
+    border:3px solid #ffffff;
+    border-radius:12px;
+    background:#000000;
+    color:#ffd2d2;
+    font-size:22px;
+    font-weight:800;
+  }
+  .remove-rider:disabled{opacity:.4}
+  .colors{
+    display:grid;
+    grid-template-columns:repeat(6,1fr);
+    gap:6px;
+  }
+  .color-opt{
+    aspect-ratio:1;
+    width:100%;
+    padding:0;
+    min-height:0;
+    border:3px solid #ffffff;
+    border-radius:12px;
+    font-size:0;
+  }
+  .color-opt[aria-pressed="true"]{
+    outline:4px solid #ffffff;
+    outline-offset:2px;
+  }
+  .add-rider{
+    width:100%;
+    min-height:58px;
+    margin:4px 0 16px;
+    border:3px dashed #ffffff;
+    border-radius:14px;
+    background:transparent;
+    color:#ffffff;
+    font-size:20px;
+    font-weight:900;
+  }
+  .add-rider:disabled{opacity:.4}
+  .setup-error{
+    display:none;
+    margin:0 0 14px;
+    padding:12px;
+    border:3px solid #ffffff;
+    border-radius:12px;
+    background:#ffffff;
+    color:#000000;
+    font-size:18px;
+    font-weight:800;
+    text-align:center;
+  }
+  .setup-error.show{display:block}
+  .setup-note{
+    margin:0 0 14px;
+    font-size:15px;
+    line-height:1.35;
+    text-align:center;
+  }
+  .setup-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .small{
+    border:3px solid #ffffff;
+    border-radius:12px;
+    padding:13px 8px;
+    min-height:54px;
+    background:#000000;
+    color:#ffffff;
+    font-size:21px;
+    font-weight:800;
+  }
+  .small:disabled{
+    background:#222222;
+    color:#ffffff;
+  }
+  .confirm-save,
+  .confirm-export{
+    background:#00e676;
+    color:#000000;
+    font-weight:1000;
+  }
+  .confirm-reset{
+    background:#ff6b6b;
+    color:#000000;
+    font-weight:1000;
+  }
+  .timing-screen{
+    flex-direction:column;
+    height:100dvh;
+    padding:max(8px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom));
+    overflow:hidden;
+  }
+  .timing-header{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex:0 0 auto;
+    margin-bottom:8px;
+  }
+  .timing-header h1{
+    flex:1;
+    min-width:0;
+    margin:0;
+    font-size:clamp(22px,6.2vw,32px);
+    line-height:1.1;
+  }
+  .timing-header .install-chip{
+    display:none;
+    flex:0 1 auto;
+    min-width:88px;
+    min-height:48px;
+    font-size:16px;
+  }
+  .timing-header .install-chip.show{display:block}
+  .timing-header .setup-btn{
+    flex:0 0 64px;
+    width:64px;
+    min-width:64px;
+    min-height:64px;
+    padding:0;
+    display:grid;
+    place-items:center;
+  }
+  .timing-header .setup-btn svg{
+    width:80%;
+    height:80%;
+    display:block;
+  }
+  .timing-footer{
+    display:flex;
+    gap:10px;
+    flex:0 0 auto;
+    margin-top:16px;
+    padding:4px 6px 12px;
+  }
+  .timing-footer .small{
+    flex:1;
+    min-height:48px;
+    font-size:18px;
+  }
+  .grid{
+    flex:1;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:1fr 1fr;
+    gap:var(--gap);
+    min-height:0;
+  }
+  .slot{min-height:0}
+  .card{
+    width:100%;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    justify-content:flex-start;
+    align-items:stretch;
+    text-align:left;
+    padding:10px;
+    border:4px solid #ffffff;
+    border-radius:16px;
+    background:#000000;
+    color:#000000;
+    cursor:pointer;
+    container-type:size;
+    overflow:hidden;
+  }
+  .card.empty{
+    visibility:hidden;
+    pointer-events:none;
+  }
+  .card-name{
+    font-size:clamp(16px,10cqh,32px);
+    font-weight:1000;
+    text-transform:uppercase;
+    line-height:1.05;
+    letter-spacing:-.03em;
+  }
+  .card-id{
+    font-size:clamp(12px,7cqh,20px);
+    font-weight:800;
+    text-transform:uppercase;
+    line-height:1.1;
+  }
+  .card-status{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:clamp(10px,4cqh,22px);
+    min-height:0;
+    text-align:center;
+  }
+  .card-laps{
+    font-size:clamp(64px,min(52cqh,72cqw),220px);
+    font-weight:1000;
+    line-height:.8;
+    letter-spacing:-.06em;
+    font-variant-numeric:tabular-nums;
+  }
+  .card-laps:empty{display:none}
+  .card-caption{
+    font-size:clamp(16px,9cqh,28px);
+    font-weight:1000;
+    letter-spacing:-.03em;
+    line-height:1;
+    text-transform:uppercase;
+  }
+  .card.start .card-caption,
+  .card.to-line .card-caption,
+  .card.finished .card-caption{
+    font-size:clamp(22px,16cqh,48px);
+  }
+  .card-next{
+    font-size:clamp(16px,9cqh,28px);
+    font-weight:1000;
+    letter-spacing:-.03em;
+    line-height:1;
+    text-transform:uppercase;
+    white-space:nowrap;
+  }
+  .card.to-line .card-caption{
+    white-space:nowrap;
+  }
+  .card-footer{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:8px;
+    margin-top:2px;
+  }
+  .card-progress,
+  .card-time{
+    font-size:clamp(14px,8cqh,24px);
+    font-weight:800;
+    font-variant-numeric:tabular-nums;
+    line-height:1;
+    white-space:nowrap;
+  }
+  .card-progress{text-align:left}
+  .card-time{text-align:right;margin-left:auto}
+  .card.final{
+    background:#000000;
+    color:#ffffff;
+    border-color:#ffffff;
+  }
+  .card.finished{
+    background:#ffffff;
+    color:#000000;
+    border-color:#ffffff;
+  }
+  .card.flash{
+    outline:5px solid #ffffff;
+    outline-offset:-2px;
+  }
+  @keyframes final-flash{
+    0%,49.9%{background-color:#000000;color:#ffffff;border-color:#ffffff}
+    50%,100%{background-color:#ffffff;color:#000000;border-color:#ffffff}
+  }
+  .card.final-flash{
+    animation:final-flash 2s steps(1) infinite;
+  }
+  .timing-screen.install-locked .grid{opacity:.38;pointer-events:none}
+  .timing-screen.install-locked .timing-footer,
+  .timing-screen.install-locked .setup-btn{pointer-events:none;opacity:.5}
+  .install-hint{
+    display:none;
+    position:absolute;
+    left:8px;
+    right:8px;
+    top:76px;
+    bottom:max(64px,calc(56px + env(safe-area-inset-bottom)));
+    z-index:20;
+    flex-direction:column;
+    justify-content:center;
+    gap:16px;
+    padding:20px 16px;
+    border:4px solid #ffffff;
+    border-radius:18px;
+    background:#ffffff;
+    color:#000000;
+  }
+  .timing-screen{position:relative}
+  .install-hint.show{display:flex}
+  .install-hint.compact{display:none}
+  .install-hint-copy{text-align:center}
+  .install-hint-copy strong{
+    display:block;
+    font-size:clamp(24px,6vw,34px);
+    font-weight:1000;
+    line-height:1.15;
+  }
+  .install-hint-copy span{
+    display:block;
+    margin-top:10px;
+    font-size:clamp(18px,5vw,24px);
+    font-weight:800;
+    line-height:1.3;
+  }
+  .install-hint-add{
+    display:none;
+    width:100%;
+    min-height:76px;
+    border:4px solid #000000;
+    border-radius:17px;
+    background:#000000;
+    color:#ffffff;
+    font-size:clamp(22px,5.8vw,28px);
+    font-weight:1000;
+  }
+  .install-hint.can-install .install-hint-add{display:block}
+  .install-hint-dismiss{
+    width:100%;
+    min-height:54px;
+    border:3px solid #000000;
+    border-radius:12px;
+    background:#ffffff;
+    color:#000000;
+    font-size:21px;
+    font-weight:800;
+  }
+  .results-screen{
+    flex-direction:column;
+    min-height:100dvh;
+    padding:14px 14px max(18px,env(safe-area-inset-bottom));
+    overflow:auto;
+  }
+  .results-screen h1{margin-bottom:14px}
+  #resultsBody{overflow-x:auto}
+  .results-table{
+    width:100%;
+    border-collapse:collapse;
+    margin:0 0 18px;
+    font-variant-numeric:tabular-nums;
+  }
+  .results-table th,
+  .results-table td{
+    border:2px solid #ffffff;
+    padding:12px 10px;
+    text-align:left;
+    font-size:22px;
+    font-weight:800;
+  }
+  .results-table th:last-child,
+  .results-table td:last-child{text-align:right}
+  .results-actions{
+    display:grid;
+    gap:10px;
+  }
+  .modal{
+    display:none;
+    position:fixed;
+    inset:0;
+    z-index:10000;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    background:rgba(0,0,0,.78);
+  }
+  .modal.show{display:flex}
+  .modal-panel{
+    width:min(560px,100%);
+    background:#000000;
+    border:4px solid #ffffff;
+    border-radius:22px;
+    padding:28px 20px;
+    text-align:center;
+  }
+  .modal-title{
+    margin:0 0 14px;
+    font-size:34px;
+    font-weight:1000;
+  }
+  .modal-text{
+    margin:0 0 24px;
+    font-size:22px;
+    line-height:1.35;
+  }
+  .modal-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:14px;
+  }
+  .modal-actions .small{
+    min-height:72px;
+    font-size:24px;
+    font-weight:1000;
+  }
+  .splits-panel{
+    display:flex;
+    flex-direction:column;
+    max-height:min(88dvh, 100%);
+    padding:20px 16px 12px;
+    text-align:left;
+  }
+  .splits-head{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    flex:0 0 auto;
+    margin-bottom:14px;
+  }
+  .splits-head-text{
+    flex:1;
+    min-width:0;
+  }
+  .splits-panel .modal-title{
+    margin:0;
+    font-size:clamp(26px,7vw,34px);
+    line-height:1.1;
+    text-transform:uppercase;
+    overflow-wrap:anywhere;
+  }
+  .splits-close{
+    flex:0 0 56px;
+    width:56px;
+    height:56px;
+    min-width:56px;
+    min-height:56px;
+    border:3px solid #ffffff;
+    border-radius:12px;
+    background:#000000;
+    color:#ffffff;
+    padding:0;
+    display:grid;
+    place-items:center;
+  }
+  .splits-close svg{
+    width:28px;
+    height:28px;
+    display:block;
+  }
+  .splits-scroll-wrap{
+    position:relative;
+    min-height:0;
+    flex:1;
+  }
+  .splits-list{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    max-height:min(50dvh, 440px);
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .splits-list.has-overflow{padding-bottom:52px}
+  .split-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    min-height:56px;
+    padding:10px 14px;
+    border:3px solid #ffffff;
+    border-radius:12px;
+    font-weight:800;
+    font-variant-numeric:tabular-nums;
+  }
+  .split-label{
+    font-size:22px;
+    line-height:1.1;
+  }
+  .split-time{
+    font-size:24px;
+    line-height:1;
+    white-space:nowrap;
+  }
+  .splits-summary{
+    flex:0 0 auto;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom:12px;
+  }
+  .splits-summary .split-row{
+    background:#ffffff;
+    color:#000000;
+    font-weight:1000;
+  }
+  .splits-summary .split-label{
+    text-transform:uppercase;
+  }
+  .splits-more{
+    pointer-events:none;
+    position:absolute;
+    left:0;
+    right:0;
+    bottom:0;
+    height:72px;
+    display:flex;
+    align-items:flex-end;
+    justify-content:center;
+    padding-bottom:6px;
+    background:linear-gradient(to bottom, rgba(0,0,0,0), #000000 62%);
+  }
+  .splits-more[hidden]{display:none !important}
+  .splits-more-arrow{
+    width:36px;
+    height:36px;
+    color:#ffffff;
+  }
+</style>
+</head>
+<body>
+<section class="screen setup-screen" id="setupScreen">
+  <h1>LapTap for Coaches</h1>
+  <div class="field">
+    <label for="coursePreset">Distance</label>
+    <select id="coursePreset">
+      <option value="six-laps">6 laps</option>
+      <option value="twelve-laps">12 laps</option>
+      <option value="eighteen-laps">18 laps</option>
+      <option value="ten-mile">10 miles</option>
+      <option value="custom">Custom</option>
+    </select>
+  </div>
+  <div class="custom-fields hidden" id="customFields">
+    <div class="field">
+      <label for="openingLaps">Opening segment (laps)</label>
+      <input id="openingLaps" type="text" inputmode="decimal" value="0">
+    </div>
+    <div class="field">
+      <label for="fullLaps">Full laps after opening</label>
+      <input id="fullLaps" type="text" inputmode="numeric" value="6">
+    </div>
+  </div>
+  <div id="riderEditors"></div>
+  <button class="add-rider" id="addRiderBtn" type="button">+ Add rider</button>
+  <p class="setup-error" id="setupError"></p>
+  <p class="setup-note">Changing rider details keeps current laps. Changing the number of laps clears times.</p>
+  <div class="setup-actions">
+    <button class="small" id="setupCancelBtn" type="button">Cancel</button>
+    <button class="small confirm-save" id="setupSaveBtn" type="button">Save</button>
+  </div>
+</section>
+
+<section class="screen timing-screen" id="timingScreen">
+  <div class="timing-header">
+    <h1>LapTap for Coaches</h1>
+    <button class="small install-chip" id="installChip" type="button">Install</button>
+    <button class="small setup-btn" id="setupBtn" type="button" aria-label="Rider settings">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567l-.144.866a8.1 8.1 0 0 0-1.335.775l-.82-.36c-.85-.372-1.845-.05-2.35.76l-.922 1.48c-.505.81-.28 1.877.518 2.495l.72.56a8.2 8.2 0 0 0-.05 1.545l-.72.56c-.798.618-1.023 1.685-.518 2.495l.922 1.48c.505.81 1.5 1.132 2.35.76l.82-.36c.41.32.86.58 1.335.775l.144.866c.151.904.933 1.567 1.85 1.567h1.844c.917 0 1.699-.663 1.85-1.567l.144-.866a8.1 8.1 0 0 0 1.335-.775l.82.36c.85.372 1.845.05 2.35-.76l.922-1.48c.505-.81.28-1.877-.518-2.495l-.72-.56a8.2 8.2 0 0 0 .05-1.545l.72-.56c.798-.618 1.023-1.685.518-2.495l-.922-1.48c-.505-.81-1.5-1.132-2.35-.76l-.82.36a8.1 8.1 0 0 0-1.335-.775l-.144-.866c.151-.904-.933-1.567-1.85-1.567h-1.844ZM12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z"/>
+      </svg>
+    </button>
+  </div>
+  <div class="grid" id="grid"></div>
+  <div class="timing-footer">
+    <button class="small" id="undoBtn" type="button">Undo</button>
+    <button class="small" id="resultsBtn" type="button">Results</button>
+  </div>
+  <div class="install-hint" id="installHint">
+    <div class="install-hint-copy">
+      <strong id="installHintTitle">Install for race day</strong>
+      <span id="installHintText">To use LapTap for Coaches with no phone signal, install it now and then open from your Home screen.</span>
+    </div>
+    <button class="install-hint-add" id="installHintAdd" type="button">Install</button>
+    <button class="install-hint-dismiss" id="installHintDismiss" type="button">Not now</button>
+  </div>
+</section>
+
+<section class="screen results-screen" id="resultsScreen">
+  <h1>Results</h1>
+  <div id="resultsBody"></div>
+  <div class="results-actions">
+    <button class="small confirm-export" id="exportBtn" type="button">Share Excel</button>
+    <button class="small confirm-reset" id="resetBtn" type="button">Reset times</button>
+    <button class="small" id="resultsBackBtn" type="button">Back to timing</button>
+  </div>
+</section>
+
+<div class="modal" id="resetModal" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
+  <div class="modal-panel">
+    <h2 class="modal-title" id="resetModalTitle">Reset times?</h2>
+    <p class="modal-text">This clears starts, laps and finishes. Rider names and the course stay.</p>
+    <div class="modal-actions">
+      <button class="small" id="resetCancelBtn" type="button">Cancel</button>
+      <button class="small confirm-reset" id="resetConfirmBtn" type="button">Reset</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="splitsModal" role="dialog" aria-modal="true" aria-labelledby="splitsModalTitle">
+  <div class="modal-panel splits-panel">
+    <div class="splits-head">
+      <div class="splits-head-text">
+        <h2 class="modal-title" id="splitsModalTitle">Splits</h2>
+      </div>
+      <button class="splits-close" id="splitsCloseBtn" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path stroke="currentColor" stroke-width="3" stroke-linecap="square" d="M5 5l14 14M19 5L5 19"/>
+        </svg>
+      </button>
+    </div>
+    <div class="splits-summary">
+      <div class="split-row">
+        <span class="split-label">Total</span>
+        <span class="split-time" id="splitsTotal"></span>
+      </div>
+      <div class="split-row">
+        <span class="split-label">Avg lap</span>
+        <span class="split-time" id="splitsAvg"></span>
+      </div>
+    </div>
+    <div class="splits-scroll-wrap">
+      <div class="splits-list" id="splitsList"></div>
+      <div class="splits-more" id="splitsMore" hidden>
+        <svg class="splits-more-arrow" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="currentColor" d="M4 8l8 10 8-10z"/>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="setupWarnModal" role="dialog" aria-modal="true" aria-labelledby="setupWarnTitle">
+  <div class="modal-panel">
+    <h2 class="modal-title" id="setupWarnTitle">Clear current times?</h2>
+    <p class="modal-text">Changing the number of laps starts a new session and wipes times already recorded.</p>
+    <div class="modal-actions">
+      <button class="small" id="setupWarnCancelBtn" type="button">Cancel</button>
+      <button class="small confirm-save" id="setupWarnConfirmBtn" type="button">Save</button>
+    </div>
+  </div>
+</div>
+
+<audio id="finalLapBell" src="./bell.wav" preload="auto"></audio>
+<script src="./app.js"></script>
+</body>
+</html>
