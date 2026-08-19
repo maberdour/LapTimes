@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="LapTap for Coaches">
+<meta name="apple-mobile-web-app-title" content="LT Coach">
 <title>LapTap for Coaches</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
@@ -426,14 +426,30 @@
   .timing-screen.install-locked .grid{opacity:.38;pointer-events:none}
   .timing-screen.install-locked .timing-footer,
   .timing-screen.install-locked .setup-btn{pointer-events:none;opacity:.5}
+  .setup-screen.install-locked,
+  .results-screen.install-locked{
+    pointer-events:none;
+    opacity:.38;
+  }
   .install-hint{
     display:none;
-    position:absolute;
-    left:8px;
-    right:8px;
-    top:76px;
-    bottom:max(64px,calc(56px + env(safe-area-inset-bottom)));
-    z-index:20;
+    position:fixed;
+    inset:0;
+    z-index:9000;
+    align-items:center;
+    justify-content:center;
+    padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));
+    background:rgba(0,0,0,.86);
+  }
+  .install-hint.show{display:flex}
+  .install-hint.compact{
+    display:none;
+    background:transparent;
+    pointer-events:none;
+  }
+  .install-hint-panel{
+    width:min(560px,100%);
+    display:flex;
     flex-direction:column;
     justify-content:center;
     gap:16px;
@@ -443,9 +459,6 @@
     background:#ffffff;
     color:#000000;
   }
-  .timing-screen{position:relative}
-  .install-hint.show{display:flex}
-  .install-hint.compact{display:none}
   .install-hint-copy{text-align:center}
   .install-hint-copy strong{
     display:block;
@@ -713,14 +726,6 @@
     <button class="small" id="undoBtn" type="button">Undo</button>
     <button class="small" id="resultsBtn" type="button">Results</button>
   </div>
-  <div class="install-hint" id="installHint">
-    <div class="install-hint-copy">
-      <strong id="installHintTitle">Install for race day</strong>
-      <span id="installHintText">To use LapTap for Coaches with no phone signal, install it now and then open from your Home screen.</span>
-    </div>
-    <button class="install-hint-add" id="installHintAdd" type="button">Install</button>
-    <button class="install-hint-dismiss" id="installHintDismiss" type="button">Not now</button>
-  </div>
 </section>
 
 <section class="screen results-screen" id="resultsScreen">
@@ -732,6 +737,17 @@
     <button class="small" id="resultsBackBtn" type="button">Back to timing</button>
   </div>
 </section>
+
+<div class="install-hint" id="installHint">
+  <div class="install-hint-panel">
+    <div class="install-hint-copy">
+      <strong id="installHintTitle">Install for race day</strong>
+      <span id="installHintText">To use LapTap for Coaches with no phone signal, install it now and then open from your Home screen.</span>
+    </div>
+    <button class="install-hint-add" id="installHintAdd" type="button">Install</button>
+    <button class="install-hint-dismiss" id="installHintDismiss" type="button">Not now</button>
+  </div>
+</div>
 
 <div class="modal" id="resetModal" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
   <div class="modal-panel">

@@ -431,7 +431,10 @@
   }
 
   function applyInstallLock(){
-    timingScreen.classList.toggle("install-locked", installPending());
+    const pending = installPending();
+    timingScreen.classList.toggle("install-locked", pending);
+    setupScreen.classList.toggle("install-locked", pending);
+    resultsScreen.classList.toggle("install-locked", pending);
     const chip = $("installChip");
     const compact = Boolean($("installHint")?.classList.contains("compact") && $("installHint")?.classList.contains("show"));
     chip.classList.toggle("show", compact || (blockDismissed() && canShowInstallUi() && !isStandalone()));
@@ -445,7 +448,7 @@
     const add = $("installHintAdd");
     if(!el || !title || !text || !add || !canShowInstallUi()) return;
 
-    if(kind === "prompt" || kind === "ios"){
+    if(kind === "prompt" || kind === "ios" || kind === "manual"){
       if(blockDismissed()) kind = "compact";
     }
     if(kind === "compact" || kind === "compact-ios" || kind === "compact-waiting"){
@@ -469,6 +472,11 @@
     } else if(kind === "ios"){
       title.textContent = "Install for race day";
       text.textContent = "To use LapTap for Coaches with no phone signal, install it now and then open from your Home screen. Tap Share, then Add to Home Screen.";
+      add.textContent = "Install";
+      el.classList.remove("can-install");
+    } else if(kind === "manual"){
+      title.textContent = "Install for race day";
+      text.textContent = "To use LapTap for Coaches with no phone signal, install it now and then open from your Home screen. Use your browser menu to install the app, then open it from the Home screen.";
       add.textContent = "Install";
       el.classList.remove("can-install");
     } else if(kind === "compact" || kind === "compact-ios" || kind === "compact-waiting"){
@@ -1244,6 +1252,7 @@
     if(blockDismissed()) showInstallHint("compact");
     else if(deferredInstall) showInstallHint("prompt");
     else if(isIosDevice()) showInstallHint("ios");
+    else showInstallHint("manual");
   }
 
   window.addEventListener("beforeinstallprompt", e => {
