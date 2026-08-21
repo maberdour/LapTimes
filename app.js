@@ -194,6 +194,10 @@
     return session.riders.some(r => session.startedAt[r.id] && !session.finishedAt[r.id]);
   }
 
+  function allFinished(){
+    return session.riders.length > 0 && session.riders.every(r => session.finishedAt[r.id]);
+  }
+
   function riderView(rider, now){
     const id = rider.id;
     const started = session.startedAt[id];
@@ -745,6 +749,7 @@
       grid.appendChild(slot);
     });
     $("undoBtn").disabled = installPending() || !session.history.length;
+    $("resultsBtn").disabled = installPending() || !allFinished();
     applyInstallLock();
     syncWakeLock();
   }
@@ -857,14 +862,10 @@
     const rows = session.riders.map(rider => {
       const view = riderView(rider, now);
       const stats = view.status === "finished" ? statsFor(rider) : null;
-      const status = view.status === "start" ? "Not started"
-        : view.status === "finished" ? "Finished"
-        : "Racing";
       const total = view.status === "finished" ? formatTime(view.elapsed) : "—";
       const avg = stats ? formatTime(stats.avg) : "—";
       return `<tr>
         <td>${escapeHtml(rider.name)}</td>
-        <td>${status}</td>
         <td>${total}</td>
         <td>${avg}</td>
       </tr>`;
@@ -874,7 +875,6 @@
         <thead>
           <tr>
             <th>Rider</th>
-            <th>Status</th>
             <th>Total</th>
             <th>Avg lap</th>
           </tr>
@@ -1438,7 +1438,7 @@
     openSetup();
   });
   $("resultsBtn").addEventListener("click", () => {
-    if(installPending()) return;
+    if(installPending() || !allFinished()) return;
     renderResults();
     showScreen("results");
   });

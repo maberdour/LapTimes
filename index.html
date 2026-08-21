@@ -324,7 +324,7 @@
     justify-content:flex-start;
     align-items:stretch;
     text-align:left;
-    padding:10px;
+    padding:16px;
     border:4px solid #ffffff;
     border-radius:16px;
     background:#000000;
@@ -334,14 +334,14 @@
     overflow:hidden;
   }
   .card-name{
-    font-size:clamp(16px,10cqh,32px);
+    font-size:clamp(14px,7cqh,22px);
     font-weight:1000;
     text-transform:uppercase;
     line-height:1.05;
     letter-spacing:-.03em;
   }
   .card-id{
-    font-size:clamp(12px,7cqh,20px);
+    font-size:clamp(11px,5cqh,15px);
     font-weight:800;
     text-transform:uppercase;
     line-height:1.1;
@@ -396,7 +396,7 @@
   }
   .card-progress,
   .card-time{
-    font-size:clamp(14px,8cqh,24px);
+    font-size:clamp(12px,6cqh,18px);
     font-weight:800;
     font-variant-numeric:tabular-nums;
     line-height:1;
@@ -406,27 +406,27 @@
   .card-time{text-align:right;margin-left:auto}
   .grid[data-riders="1"] .card-name,
   .grid[data-riders="2"] .card-name{
-    font-size:clamp(28px,14cqh,56px);
+    font-size:clamp(18px,9cqh,32px);
   }
   .grid[data-riders="3"] .card-name{
-    font-size:clamp(24px,13cqh,36px);
+    font-size:clamp(16px,8cqh,24px);
   }
   .grid[data-riders="1"] .card-id,
   .grid[data-riders="2"] .card-id{
-    font-size:clamp(18px,9cqh,36px);
+    font-size:clamp(13px,6cqh,20px);
   }
   .grid[data-riders="3"] .card-id{
-    font-size:clamp(16px,9cqh,24px);
+    font-size:clamp(12px,6cqh,16px);
   }
   .grid[data-riders="1"] .card-progress,
   .grid[data-riders="1"] .card-time,
   .grid[data-riders="2"] .card-progress,
   .grid[data-riders="2"] .card-time{
-    font-size:clamp(22px,10cqh,44px);
+    font-size:clamp(14px,7cqh,24px);
   }
   .grid[data-riders="3"] .card-progress,
   .grid[data-riders="3"] .card-time{
-    font-size:clamp(18px,10cqh,28px);
+    font-size:clamp(13px,7cqh,18px);
   }
   .card.final{
     background:#000000;
@@ -538,9 +538,9 @@
   .results-table th,
   .results-table td{
     border:2px solid #ffffff;
-    padding:12px 10px;
+    padding:10px 8px;
     text-align:left;
-    font-size:22px;
+    font-size:18px;
     font-weight:800;
   }
   .results-table th:last-child,
@@ -665,6 +665,9 @@
     border-radius:12px;
     font-weight:800;
     font-variant-numeric:tabular-nums;
+  }
+  .splits-list .split-row{
+    border:none;
   }
   .split-label{
     font-size:22px;
