@@ -466,24 +466,24 @@
 
     if(kind === "waiting"){
       title.textContent = "Open it from your Home screen";
-      text.textContent = "Leave this browser tab. Use the LapTap for Coaches icon so it still works with no signal.";
+      text.textContent = "Leave this browser tab. Use the Lap Tracker icon so it still works with no signal.";
       add.textContent = "Install";
       el.classList.remove("can-install");
     } else if(kind === "ios"){
       title.textContent = "Install for race day";
-      text.textContent = "To use LapTap for Coaches with no phone signal, install it now and then open from your Home screen. Tap Share, then Add to Home Screen.";
+      text.textContent = "To use Lap Tracker with no phone signal, install it now and then open from your Home screen. Tap Share, then Add to Home Screen.";
       add.textContent = "Install";
       el.classList.remove("can-install");
     } else if(kind === "manual"){
       title.textContent = "Install for race day";
-      text.textContent = "To use LapTap for Coaches with no phone signal, install it now and then open from your Home screen. Use your browser menu to install the app, then open it from the Home screen.";
+      text.textContent = "To use Lap Tracker with no phone signal, install it now and then open from your Home screen. Use your browser menu to install the app, then open it from the Home screen.";
       add.textContent = "Install";
       el.classList.remove("can-install");
     } else if(kind === "compact" || kind === "compact-ios" || kind === "compact-waiting"){
       $("installChip").classList.add("show");
     } else {
       title.textContent = "Install for race day";
-      text.textContent = "To use LapTap for Coaches with no phone signal, install it now and then open from your Home screen.";
+      text.textContent = "To use Lap Tracker with no phone signal, install it now and then open from your Home screen.";
       add.textContent = "Install";
       el.classList.add("can-install");
     }
@@ -701,20 +701,11 @@
     const now = Date.now();
     const riders = session.riders.slice(0, 4);
     grid.innerHTML = "";
-    for(let i = 0; i < 4; i++){
-      const rider = riders[i];
+    grid.dataset.riders = String(riders.length || 1);
+    riders.forEach(rider => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "card";
-      if(!rider){
-        btn.classList.add("empty");
-        btn.tabIndex = -1;
-        const slot = document.createElement("div");
-        slot.className = "slot";
-        slot.appendChild(btn);
-        grid.appendChild(slot);
-        continue;
-      }
       const view = riderView(rider, now);
       const color = colorById(rider.color);
       const inverted = view.status === "final";
@@ -752,7 +743,7 @@
       slot.className = "slot";
       slot.appendChild(btn);
       grid.appendChild(slot);
-    }
+    });
     $("undoBtn").disabled = installPending() || !session.history.length;
     applyInstallLock();
     syncWakeLock();
@@ -891,6 +882,9 @@
         <tbody>${rows}</tbody>
       </table>
     `;
+    const canShare = typeof navigator.share === "function";
+    $("exportShareBtn").hidden = !canShare;
+    $("resultsShareRow").classList.toggle("download-only", !canShare);
   }
 
   function xmlEscape(value){
@@ -1075,21 +1069,182 @@
     ]);
   }
 
-  function exportFilename(){
+  function fileStamp(){
     const d = new Date();
-    const stamp = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
-    return `laptap-coach-${stamp}.xlsx`;
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}`;
   }
 
-  async function shareFile(file){
+  function exportFilename(){
+    return `laptap-coach-${fileStamp()}.xlsx`;
+  }
+
+  function shareSlug(value){
+    return String(value || "rider")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || "rider";
+  }
+
+  function wrapCanvasText(ctx, text, maxWidth){
+    const str = String(text || "").trim() || "";
+    if(!str) return [""];
+    const words = str.split(/\s+/);
+    const lines = [];
+    let line = "";
+    const flushWord = word => {
+      const test = line ? `${line} ${word}` : word;
+      if(ctx.measureText(test).width <= maxWidth){
+        line = test;
+        return;
+      }
+      if(line) lines.push(line);
+      if(ctx.measureText(word).width <= maxWidth){
+        line = word;
+        return;
+      }
+      let chunk = "";
+      for(const ch of word){
+        const next = chunk + ch;
+        if(ctx.measureText(next).width <= maxWidth) chunk = next;
+        else {
+          if(chunk) lines.push(chunk);
+          chunk = ch;
+        }
+      }
+      line = chunk;
+    };
+    words.forEach(flushWord);
+    if(line) lines.push(line);
+    return lines.length ? lines : [""];
+  }
+
+  function pathRoundRect(ctx, x, y, w, h, r){
+    const rr = Math.min(r, w / 2, h / 2);
+    ctx.beginPath();
+    if(typeof ctx.roundRect === "function"){
+      ctx.roundRect(x, y, w, h, rr);
+      return;
+    }
+    ctx.moveTo(x + rr, y);
+    ctx.arcTo(x + w, y, x + w, y + h, rr);
+    ctx.arcTo(x + w, y + h, x, y + h, rr);
+    ctx.arcTo(x, y + h, x, y, rr);
+    ctx.arcTo(x, y, x + w, y, rr);
+    ctx.closePath();
+  }
+
+  function drawSplitRow(ctx, x, y, w, h, label, time, invert){
+    pathRoundRect(ctx, x, y, w, h, 12);
+    ctx.fillStyle = invert ? "#ffffff" : "#000000";
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "#ffffff";
+    ctx.stroke();
+    const padX = 18;
+    ctx.fillStyle = invert ? "#000000" : "#ffffff";
+    ctx.font = `800 26px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, x + padX, y + h / 2, w * 0.55);
+    ctx.font = `1000 28px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif`;
+    ctx.textAlign = "right";
+    ctx.fillText(time, x + w - padX, y + h / 2, w * 0.4);
+  }
+
+  function drawSplitsCanvas(rider){
+    const splits = splitsFor(rider);
+    const stats = statsFor(rider);
+    const view = riderView(rider, Date.now());
+    const color = colorById(rider.color);
+    const width = 720;
+    const pad = 36;
+    const rowH = 72;
+    const gap = 10;
+    const innerW = width - pad * 2;
+    const scale = 2;
+    const fontFamily = `system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif`;
+    const measure = document.createElement("canvas").getContext("2d");
+    measure.font = `1000 44px ${fontFamily}`;
+    const titleLines = wrapCanvasText(measure, (rider.name || "Splits").toUpperCase(), innerW);
+    measure.font = `800 22px ${fontFamily}`;
+    const meta = [rider.identifier, session.course.name].filter(Boolean).join(" · ");
+    const metaLines = meta ? wrapCanvasText(measure, meta, innerW) : [];
+    const rows = splits.length
+      ? splits.map(split => ({ label: split.segment, time: formatTime(split.split) }))
+      : [{ label: "No splits yet", time: "—" }];
+    const titleH = titleLines.length * 50;
+    const metaH = metaLines.length ? metaLines.length * 28 + 8 : 0;
+    const summaryH = rowH * 2 + gap;
+    const listH = rows.length * rowH + (rows.length - 1) * gap;
+    const height = 18 + pad + titleH + metaH + 22 + summaryH + 16 + listH + 28 + 22 + pad;
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(width * scale);
+    canvas.height = Math.round(height * scale);
+    const ctx = canvas.getContext("2d");
+    ctx.scale(scale, scale);
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, width, height);
+    ctx.fillStyle = color.bg;
+    ctx.fillRect(0, 0, width, 16);
+    if(color.border){
+      ctx.fillStyle = color.border;
+      ctx.fillRect(0, 14, width, 2);
+    }
+    let y = 18 + pad;
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.font = `1000 44px ${fontFamily}`;
+    titleLines.forEach(line => {
+      ctx.fillText(line, pad, y, innerW);
+      y += 50;
+    });
+    if(metaLines.length){
+      y += 4;
+      ctx.font = `800 22px ${fontFamily}`;
+      metaLines.forEach(line => {
+        ctx.fillText(line, pad, y, innerW);
+        y += 28;
+      });
+      y += 8;
+    }
+    y += 18;
+    drawSplitRow(ctx, pad, y, innerW, rowH, "TOTAL", formatTime(view.elapsed), true);
+    y += rowH + gap;
+    drawSplitRow(ctx, pad, y, innerW, rowH, "AVG LAP", stats ? formatTime(stats.avg) : "—", true);
+    y += rowH + 16;
+    rows.forEach(row => {
+      drawSplitRow(ctx, pad, y, innerW, rowH, row.label, row.time, false);
+      y += rowH + gap;
+    });
+    y += 10;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `800 18px ${fontFamily}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    ctx.fillText("Lap Tracker", pad, y);
+    return canvas;
+  }
+
+  function canvasPngBlob(canvas){
+    return new Promise(resolve => {
+      canvas.toBlob(blob => resolve(blob), "image/png");
+    });
+  }
+
+  async function shareFiles(files, force){
     if(!navigator.share) return false;
-    try{
-      if(navigator.canShare && !navigator.canShare({ files: [file] })) return false;
-    }catch(err){
-      return false;
+    const payload = { files, title: "Lap Tracker" };
+    if(!force){
+      try{
+        if(navigator.canShare && !navigator.canShare(payload)) return false;
+      }catch(err){
+        return false;
+      }
     }
     try{
-      await navigator.share({ files: [file], title: "LapTap for Coaches" });
+      await navigator.share(payload);
       return true;
     }catch(err){
       if(err && err.name === "AbortError") return true;
@@ -1097,17 +1252,11 @@
     }
   }
 
-  async function exportWorkbook(){
-    const bytes = buildXlsx();
-    const name = exportFilename();
-    const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-    const types = [
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "text/csv"
-    ];
-    for(const type of types){
-      if(await shareFile(new File([blob], name, { type }))) return;
-    }
+  async function shareFile(file){
+    return shareFiles([file]);
+  }
+
+  function downloadBlob(blob, name){
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -1116,6 +1265,118 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function shareOrDownload(blob, name, types){
+    for(const type of types){
+      if(await shareFile(new File([blob], name, { type }))) return;
+    }
+    downloadBlob(blob, name);
+  }
+
+  function csvEscape(value){
+    const s = String(value ?? "");
+    if(/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+    return s;
+  }
+
+  function rowsToCsv(rows){
+    return "\uFEFF" + rows.map(row => row.map(csvEscape).join(",")).join("\r\n");
+  }
+
+  function xlsxExport(){
+    const bytes = buildXlsx();
+    const name = exportFilename();
+    const type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+    return {
+      name,
+      blob: new Blob([bytes], { type }),
+      type
+    };
+  }
+
+  function excelShareCandidates(xlsx){
+    const stamp = xlsx.name.replace(/^laptap-coach-|\.xlsx$/g, "");
+    const summaryCsv = new File([rowsToCsv(summaryRows())], `laptap-coach-summary-${stamp}.csv`, { type: "text/csv" });
+    const splitsCsv = new File([rowsToCsv(splitRows())], `laptap-coach-splits-${stamp}.csv`, { type: "text/csv" });
+    const combinedCsv = new File(
+      [rowsToCsv([...summaryRows(), [], ...splitRows()])],
+      `laptap-coach-${stamp}.csv`,
+      { type: "text/csv" }
+    );
+    const plainCsv = new File(
+      [rowsToCsv([...summaryRows(), [], ...splitRows()])],
+      `laptap-coach-${stamp}.csv`,
+      { type: "text/plain" }
+    );
+    return [
+      [new File([xlsx.blob], xlsx.name, { type: xlsx.type })],
+      [new File([xlsx.blob], xlsx.name, { type: "application/octet-stream" })],
+      [summaryCsv, splitsCsv],
+      [combinedCsv],
+      [plainCsv]
+    ];
+  }
+
+  async function shareSplitsImage(){
+    const rider = session.riders.find(r => r.id === splitsModalRiderId);
+    if(!rider) return;
+    const btn = $("splitsShareBtn");
+    btn.disabled = true;
+    const label = btn.textContent;
+    btn.textContent = "Sharing…";
+    try{
+      const blob = await canvasPngBlob(drawSplitsCanvas(rider));
+      if(!blob) return;
+      const name = `laptap-coach-${shareSlug(rider.name)}-${fileStamp()}.png`;
+      await shareOrDownload(blob, name, ["image/png"]);
+    }finally{
+      btn.disabled = false;
+      btn.textContent = label;
+    }
+  }
+
+  function resultsShareText(){
+    const lines = session.riders.map(rider => {
+      const view = riderView(rider, Date.now());
+      const stats = statsFor(rider);
+      const total = view.status === "finished" ? formatTime(view.elapsed) : "—";
+      const avg = stats ? formatTime(stats.avg) : "—";
+      return `${rider.name} · ${rider.identifier}: ${total}  avg ${avg}`;
+    });
+    return [`Lap Tracker · ${session.course.name}`, ...lines].join("\n");
+  }
+
+  function downloadWorkbook(){
+    const xlsx = xlsxExport();
+    downloadBlob(xlsx.blob, xlsx.name);
+  }
+
+  async function shareWorkbook(){
+    const btn = $("exportShareBtn");
+    btn.disabled = true;
+    const label = btn.textContent;
+    btn.textContent = "Sharing…";
+    try{
+      const xlsx = xlsxExport();
+      const candidates = excelShareCandidates(xlsx);
+      for(const files of candidates){
+        if(await shareFiles(files)) return;
+      }
+      for(const files of candidates){
+        if(await shareFiles(files, true)) return;
+      }
+      try{
+        await navigator.share({ title: "Lap Tracker", text: resultsShareText() });
+        return;
+      }catch(err){
+        if(err && err.name === "AbortError") return;
+      }
+      downloadBlob(xlsx.blob, xlsx.name);
+    }finally{
+      btn.disabled = false;
+      btn.textContent = label;
+    }
   }
 
   $("coursePreset").addEventListener("change", () => {
@@ -1155,7 +1416,7 @@
     renderTiming();
   });
 
-  $("setupWarnCancelBtn").addEventListener("click", () => {
+  $("setupWarnCloseBtn").addEventListener("click", () => {
     pendingSetupSave = false;
     closeModal("setupWarnModal");
   });
@@ -1185,14 +1446,16 @@
     showScreen("timing");
     renderTiming();
   });
-  $("exportBtn").addEventListener("click", exportWorkbook);
+  $("exportShareBtn").addEventListener("click", shareWorkbook);
+  $("exportDownloadBtn").addEventListener("click", downloadWorkbook);
   $("resetBtn").addEventListener("click", () => openModal("resetModal"));
-  $("resetCancelBtn").addEventListener("click", () => closeModal("resetModal"));
+  $("resetCloseBtn").addEventListener("click", () => closeModal("resetModal"));
   $("resetConfirmBtn").addEventListener("click", resetTimes);
   $("resetModal").addEventListener("click", e => {
     if(e.target === $("resetModal")) closeModal("resetModal");
   });
   $("splitsCloseBtn").addEventListener("click", closeSplitsModal);
+  $("splitsShareBtn").addEventListener("click", shareSplitsImage);
   $("splitsModal").addEventListener("click", e => {
     if(e.target === $("splitsModal")) closeSplitsModal();
   });

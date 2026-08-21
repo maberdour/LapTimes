@@ -1,0 +1,11 @@
+---
+description: Do not commit or push until the user asks
+alwaysApply: true
+---
+
+# Git commits
+
+- Do not create git commits after code changes.
+- Leave edits in the working tree so they can be tested locally first (open `index.html`, or use a local static server).
+- Do not `git push` to GitHub.
+- Only commit and/or push when the user explicitly asks.

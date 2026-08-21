@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="LT Coach">
-<title>LapTap for Coaches</title>
+<title>Lap Tracker</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
@@ -304,10 +304,16 @@
   .grid{
     flex:1;
     display:grid;
-    grid-template-columns:1fr 1fr;
-    grid-template-rows:1fr 1fr;
+    grid-template-columns:1fr;
+    grid-template-rows:1fr;
     gap:var(--gap);
     min-height:0;
+  }
+  .grid[data-riders="2"]{grid-template-rows:1fr 1fr}
+  .grid[data-riders="3"]{grid-template-rows:1fr 1fr 1fr}
+  .grid[data-riders="4"]{
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:1fr 1fr;
   }
   .slot{min-height:0}
   .card{
@@ -326,10 +332,6 @@
     cursor:pointer;
     container-type:size;
     overflow:hidden;
-  }
-  .card.empty{
-    visibility:hidden;
-    pointer-events:none;
   }
   .card-name{
     font-size:clamp(16px,10cqh,32px);
@@ -402,6 +404,30 @@
   }
   .card-progress{text-align:left}
   .card-time{text-align:right;margin-left:auto}
+  .grid[data-riders="1"] .card-name,
+  .grid[data-riders="2"] .card-name{
+    font-size:clamp(28px,14cqh,56px);
+  }
+  .grid[data-riders="3"] .card-name{
+    font-size:clamp(24px,13cqh,36px);
+  }
+  .grid[data-riders="1"] .card-id,
+  .grid[data-riders="2"] .card-id{
+    font-size:clamp(18px,9cqh,36px);
+  }
+  .grid[data-riders="3"] .card-id{
+    font-size:clamp(16px,9cqh,24px);
+  }
+  .grid[data-riders="1"] .card-progress,
+  .grid[data-riders="1"] .card-time,
+  .grid[data-riders="2"] .card-progress,
+  .grid[data-riders="2"] .card-time{
+    font-size:clamp(22px,10cqh,44px);
+  }
+  .grid[data-riders="3"] .card-progress,
+  .grid[data-riders="3"] .card-time{
+    font-size:clamp(18px,10cqh,28px);
+  }
   .card.final{
     background:#000000;
     color:#ffffff;
@@ -523,6 +549,14 @@
     display:grid;
     gap:10px;
   }
+  .results-share-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .results-share-row.download-only{
+    grid-template-columns:1fr;
+  }
   .modal{
     display:none;
     position:fixed;
@@ -535,6 +569,7 @@
   }
   .modal.show{display:flex}
   .modal-panel{
+    position:relative;
     width:min(560px,100%);
     background:#000000;
     border:4px solid #ffffff;
@@ -542,8 +577,31 @@
     padding:28px 20px;
     text-align:center;
   }
+  .modal-close{
+    position:absolute;
+    top:12px;
+    right:12px;
+    z-index:1;
+    width:56px;
+    height:56px;
+    min-width:56px;
+    min-height:56px;
+    border:3px solid #ffffff;
+    border-radius:12px;
+    background:#000000;
+    color:#ffffff;
+    padding:0;
+    display:grid;
+    place-items:center;
+  }
+  .modal-close svg{
+    width:28px;
+    height:28px;
+    display:block;
+  }
   .modal-title{
     margin:0 0 14px;
+    padding:0 68px;
     font-size:34px;
     font-weight:1000;
   }
@@ -554,7 +612,7 @@
   }
   .modal-actions{
     display:grid;
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:1fr;
     gap:14px;
   }
   .modal-actions .small{
@@ -570,41 +628,16 @@
     text-align:left;
   }
   .splits-head{
-    display:flex;
-    align-items:flex-start;
-    gap:12px;
     flex:0 0 auto;
-    margin-bottom:14px;
-  }
-  .splits-head-text{
-    flex:1;
-    min-width:0;
+    margin:0 68px 14px 0;
   }
   .splits-panel .modal-title{
     margin:0;
+    padding:0;
     font-size:clamp(26px,7vw,34px);
     line-height:1.1;
     text-transform:uppercase;
     overflow-wrap:anywhere;
-  }
-  .splits-close{
-    flex:0 0 56px;
-    width:56px;
-    height:56px;
-    min-width:56px;
-    min-height:56px;
-    border:3px solid #ffffff;
-    border-radius:12px;
-    background:#000000;
-    color:#ffffff;
-    padding:0;
-    display:grid;
-    place-items:center;
-  }
-  .splits-close svg{
-    width:28px;
-    height:28px;
-    display:block;
   }
   .splits-scroll-wrap{
     position:relative;
@@ -615,7 +648,7 @@
     display:flex;
     flex-direction:column;
     gap:8px;
-    max-height:min(50dvh, 440px);
+    max-height:min(42dvh, 360px);
     overflow-y:auto;
     overscroll-behavior:contain;
     -webkit-overflow-scrolling:touch;
@@ -676,11 +709,21 @@
     height:36px;
     color:#ffffff;
   }
+  .splits-actions{
+    flex:0 0 auto;
+    margin-top:12px;
+  }
+  .splits-actions .small{
+    width:100%;
+    min-height:64px;
+    font-size:24px;
+    font-weight:1000;
+  }
 </style>
 </head>
 <body>
 <section class="screen setup-screen" id="setupScreen">
-  <h1>LapTap for Coaches</h1>
+  <h1>Lap Tracker</h1>
   <div class="field">
     <label for="coursePreset">Distance</label>
     <select id="coursePreset">
@@ -713,7 +756,7 @@
 
 <section class="screen timing-screen" id="timingScreen">
   <div class="timing-header">
-    <h1>LapTap for Coaches</h1>
+    <h1>Lap Tracker</h1>
     <button class="small install-chip" id="installChip" type="button">Install</button>
     <button class="small setup-btn" id="setupBtn" type="button" aria-label="Rider settings">
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -732,7 +775,10 @@
   <h1>Results</h1>
   <div id="resultsBody"></div>
   <div class="results-actions">
-    <button class="small confirm-export" id="exportBtn" type="button">Share Excel</button>
+    <div class="results-share-row" id="resultsShareRow">
+      <button class="small confirm-export" id="exportShareBtn" type="button">Share</button>
+      <button class="small" id="exportDownloadBtn" type="button">Download</button>
+    </div>
     <button class="small confirm-reset" id="resetBtn" type="button">Reset times</button>
     <button class="small" id="resultsBackBtn" type="button">Back to timing</button>
   </div>
@@ -742,7 +788,7 @@
   <div class="install-hint-panel">
     <div class="install-hint-copy">
       <strong id="installHintTitle">Install for race day</strong>
-      <span id="installHintText">To use LapTap for Coaches with no phone signal, install it now and then open from your Home screen.</span>
+      <span id="installHintText">To use Lap Tracker with no phone signal, install it now and then open from your Home screen.</span>
     </div>
     <button class="install-hint-add" id="installHintAdd" type="button">Install</button>
     <button class="install-hint-dismiss" id="installHintDismiss" type="button">Not now</button>
@@ -751,10 +797,14 @@
 
 <div class="modal" id="resetModal" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
   <div class="modal-panel">
+    <button class="modal-close" id="resetCloseBtn" type="button" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path stroke="currentColor" stroke-width="3" stroke-linecap="square" d="M5 5l14 14M19 5L5 19"/>
+      </svg>
+    </button>
     <h2 class="modal-title" id="resetModalTitle">Reset times?</h2>
     <p class="modal-text">This clears starts, laps and finishes. Rider names and the course stay.</p>
     <div class="modal-actions">
-      <button class="small" id="resetCancelBtn" type="button">Cancel</button>
       <button class="small confirm-reset" id="resetConfirmBtn" type="button">Reset</button>
     </div>
   </div>
@@ -762,15 +812,13 @@
 
 <div class="modal" id="splitsModal" role="dialog" aria-modal="true" aria-labelledby="splitsModalTitle">
   <div class="modal-panel splits-panel">
+    <button class="modal-close" id="splitsCloseBtn" type="button" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path stroke="currentColor" stroke-width="3" stroke-linecap="square" d="M5 5l14 14M19 5L5 19"/>
+      </svg>
+    </button>
     <div class="splits-head">
-      <div class="splits-head-text">
-        <h2 class="modal-title" id="splitsModalTitle">Splits</h2>
-      </div>
-      <button class="splits-close" id="splitsCloseBtn" type="button" aria-label="Close">
-        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
-          <path stroke="currentColor" stroke-width="3" stroke-linecap="square" d="M5 5l14 14M19 5L5 19"/>
-        </svg>
-      </button>
+      <h2 class="modal-title" id="splitsModalTitle">Splits</h2>
     </div>
     <div class="splits-summary">
       <div class="split-row">
@@ -790,15 +838,22 @@
         </svg>
       </div>
     </div>
+    <div class="splits-actions">
+      <button class="small confirm-export" id="splitsShareBtn" type="button">Share</button>
+    </div>
   </div>
 </div>
 
 <div class="modal" id="setupWarnModal" role="dialog" aria-modal="true" aria-labelledby="setupWarnTitle">
   <div class="modal-panel">
+    <button class="modal-close" id="setupWarnCloseBtn" type="button" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path stroke="currentColor" stroke-width="3" stroke-linecap="square" d="M5 5l14 14M19 5L5 19"/>
+      </svg>
+    </button>
     <h2 class="modal-title" id="setupWarnTitle">Clear current times?</h2>
     <p class="modal-text">Changing the number of laps starts a new session and wipes times already recorded.</p>
     <div class="modal-actions">
-      <button class="small" id="setupWarnCancelBtn" type="button">Cancel</button>
       <button class="small confirm-save" id="setupWarnConfirmBtn" type="button">Save</button>
     </div>
   </div>

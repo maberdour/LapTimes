@@ -1,0 +1,28 @@
+---
+description: What LapTap Coach copies from LapTap and what must stay distinct
+alwaysApply: true
+---
+
+# Family conventions (LapTap ↔ LapTap Coach)
+
+Two sibling PWAs. No shared library. When a PWA/install/wake-lock bug is fixed in LapTap, port the same patch here in the same sitting if the pattern still exists. Do not change LapTap in order to share code.
+
+## Copy by hand from LapTap
+
+- Black/white outdoor tokens, 3px+ borders, system-ui, large tap targets
+- `touch-action: manipulation` and no text selection on controls
+- Install hint + Home Screen copy (Coach wording)
+- Cache-first `sw.js` with a versioned cache name and `skipWaiting`
+- Screen Wake Lock while anyone is racing; reacquire on `visibilitychange`
+- `Date.now()` event timestamps; interval clock is display only
+- Undo history stack; reset confirm modal
+- `formatTime` to tenths (`m:ss.t`)
+- Register the service worker only when the page is not `file:`
+
+## Keep distinct
+
+- Storage key `laptapCoach.v1`, cache name `laptap-coach-v1`, manifest id/start_url, icons, title
+- Layout: full-width stacked cards for 1–3 riders, 2x2 for 4; not LapTap’s sequential discipline phases
+- Timing: opening segment + full laps (default 6 laps, opening 0)
+- Per-rider tap debounce, not LapTap’s global 800 ms cooldown
+- No confetti, screenshot helper, or html2canvas
