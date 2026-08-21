@@ -647,7 +647,7 @@
   .splits-list{
     display:flex;
     flex-direction:column;
-    gap:8px;
+    gap:2px;
     max-height:min(42dvh, 360px);
     overflow-y:auto;
     overscroll-behavior:contain;
@@ -659,8 +659,8 @@
     align-items:center;
     justify-content:space-between;
     gap:12px;
-    min-height:56px;
-    padding:10px 14px;
+    min-height:0;
+    padding:4px 10px;
     border:3px solid #ffffff;
     border-radius:12px;
     font-weight:800;
@@ -668,10 +668,11 @@
   }
   .splits-list .split-row{
     border:none;
+    padding:2px 4px;
   }
   .split-label{
     font-size:22px;
-    line-height:1.1;
+    line-height:1;
   }
   .split-time{
     font-size:24px;
@@ -682,8 +683,8 @@
     flex:0 0 auto;
     display:flex;
     flex-direction:column;
-    gap:8px;
-    margin-bottom:12px;
+    gap:4px;
+    margin-bottom:10px;
   }
   .splits-summary .split-row{
     background:#ffffff;
