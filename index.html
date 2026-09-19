@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lap Times">
-<meta name="laptap-coach-version" content="laptap-coach-v75">
+<meta name="laptap-coach-version" content="laptap-coach-v76">
 <title>Lap Times</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=74">
@@ -649,6 +649,16 @@
     display:grid;
     gap:22px;
   }
+  .results-export{
+    display:grid;
+    gap:10px;
+  }
+  .results-export-note{
+    margin:0;
+    font-size:15px;
+    line-height:1.35;
+    text-align:center;
+  }
   .results-share-row{
     display:grid;
     grid-template-columns:1fr 1fr;
@@ -897,9 +907,12 @@
   <h1>Results</h1>
   <div id="resultsBody"></div>
   <div class="results-actions">
-    <div class="results-share-row" id="resultsShareRow">
-      <button class="small confirm-export" id="exportShareBtn" type="button">Share</button>
-      <button class="small" id="exportDownloadBtn" type="button">Download</button>
+    <div class="results-export">
+      <p class="results-export-note">The file includes all of the lap splits.</p>
+      <div class="results-share-row" id="resultsShareRow">
+        <button class="small confirm-export" id="exportShareBtn" type="button">Share</button>
+        <button class="small" id="exportDownloadBtn" type="button">Download</button>
+      </div>
     </div>
     <button class="small confirm-reset" id="resetBtn" type="button">Reset times</button>
     <button class="small" id="resultsBackBtn" type="button">Back to timing</button>
