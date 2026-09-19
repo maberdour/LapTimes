@@ -1,4 +1,4 @@
-const CACHE = "laptap-coach-v53";
+const CACHE = "laptap-coach-v54";
 const PRECACHE = [
   "./",
   "./index.html",
@@ -13,16 +13,39 @@ const PRECACHE = [
 ];
 
 self.addEventListener("install", event => {
-  event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(PRECACHE)));
-  self.skipWaiting();
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE);
+    await cache.addAll(PRECACHE);
+    await self.skipWaiting();
+  })());
 });
 
+self.addEventListener("message", event => {
+  if(event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
+});
+
+async function reloadClients(){
+  const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+  await Promise.all(windows.map(async client => {
+    try{
+      if(typeof client.navigate === "function"){
+        const next = await client.navigate(client.url);
+        if(next) return;
+      }
+    }catch{}
+    try{ client.postMessage({ type: "laptap-coach-reload" }); }catch{}
+  }));
+}
+
 self.addEventListener("activate", event => {
-  event.waitUntil(
-    caches.keys().then(keys => Promise.all(
-      keys.filter(key => key !== CACHE).map(key => caches.delete(key))
-    )).then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    const stale = keys.filter(key => key !== CACHE);
+    await Promise.all(stale.map(key => caches.delete(key)));
+    await self.clients.claim();
+    // First install has no old cache. Navigating then freezes iOS Home Screen apps.
+    if(stale.length) await reloadClients();
+  })());
 });
 
 self.addEventListener("fetch", event => {
@@ -30,6 +53,22 @@ self.addEventListener("fetch", event => {
   if(req.method !== "GET") return;
   const url = new URL(req.url);
   if(url.origin !== self.location.origin) return;
+  if(url.pathname.endsWith("/sw.js")) return;
+
+  const bypassCache = url.searchParams.has("u");
+  if(bypassCache){
+    event.respondWith(
+      fetch(req).catch(() =>
+        caches.match(req).then(cached => {
+          if(cached) return cached;
+          if(req.mode === "navigate"){
+            return caches.match("./index.html").then(page => page || caches.match("./"));
+          }
+        })
+      )
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(req).then(cached => {

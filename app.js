@@ -1628,9 +1628,78 @@
     }
   });
 
-  if("serviceWorker" in navigator && location.protocol !== "file:"){
-    navigator.serviceWorker.register("./sw.js");
+  function initServiceWorker(){
+    if(!("serviceWorker" in navigator) || location.protocol === "file:") return;
+
+    const currentShell = document.querySelector('meta[name="laptap-coach-version"]')?.content || "";
+    const hadController = Boolean(navigator.serviceWorker.controller);
+    let reloading = false;
+    function reloadNow(){
+      if(reloading) return;
+      reloading = true;
+      const next = new URL(location.href);
+      next.searchParams.set("u", String(Date.now()));
+      location.replace(next.pathname + next.search + next.hash);
+    }
+
+    function reloadForUpdate(){
+      if(!hadController) return;
+      reloadNow();
+    }
+
+    function takeWaiting(reg){
+      if(!reg?.waiting) return false;
+      reg.waiting.postMessage({ type: "SKIP_WAITING" });
+      return true;
+    }
+
+    async function checkShell(){
+      if(!currentShell || reloading) return;
+      try{
+        const res = await fetch(`./index.html?u=${Date.now()}`, { cache: "no-store" });
+        if(!res.ok) return;
+        const html = await res.text();
+        const live = html.match(/laptap-coach-version"\s+content="([^"]+)"/);
+        if(live?.[1] && live[1] !== currentShell) reloadNow();
+      }catch{}
+    }
+
+    function checkForUpdate(){
+      checkShell();
+      navigator.serviceWorker.getRegistration("./").then(reg => {
+        if(!reg) return;
+        takeWaiting(reg);
+        return reg.update();
+      });
+    }
+
+    navigator.serviceWorker.addEventListener("controllerchange", reloadForUpdate);
+    navigator.serviceWorker.addEventListener("message", event => {
+      if(event.data?.type === "laptap-coach-reload") reloadForUpdate();
+    });
+
+    navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then(reg => {
+      takeWaiting(reg);
+      reg.addEventListener("updatefound", () => {
+        const worker = reg.installing;
+        if(!worker) return;
+        worker.addEventListener("statechange", () => {
+          if(worker.state === "installed") takeWaiting(reg);
+          if(worker.state === "activated") reloadForUpdate();
+        });
+      });
+      return reg.update();
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if(document.visibilityState === "visible") checkForUpdate();
+    });
+    window.addEventListener("pageshow", checkForUpdate);
+    window.addEventListener("online", checkForUpdate);
+    setTimeout(checkForUpdate, 1500);
   }
+
+  initServiceWorker();
 
   initInstallHint();
   if(sessionReady()){
