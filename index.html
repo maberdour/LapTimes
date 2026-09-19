@@ -899,6 +899,21 @@
   </div>
 </div>
 
+<div class="modal" id="removeRiderModal" role="dialog" aria-modal="true" aria-labelledby="removeRiderTitle">
+  <div class="modal-panel">
+    <button class="modal-close" id="removeRiderCloseBtn" type="button" aria-label="Close">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path stroke="currentColor" stroke-width="3" stroke-linecap="square" d="M5 5l14 14M19 5L5 19"/>
+      </svg>
+    </button>
+    <h2 class="modal-title" id="removeRiderTitle">Are you sure?</h2>
+    <p class="modal-text" id="removeRiderText">This removes the rider from the list.</p>
+    <div class="modal-actions">
+      <button class="small confirm-reset" id="removeRiderConfirmBtn" type="button">Remove</button>
+    </div>
+  </div>
+</div>
+
 <audio id="finalLapBell" src="./bell.wav" preload="auto"></audio>
 <script src="./app.js"></script>
 </body>

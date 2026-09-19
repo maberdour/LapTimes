@@ -46,6 +46,7 @@
   let finalFlashTimers = {};
   let lastTapAt = {};
   let pendingSetupSave = false;
+  let pendingRemoveRiderIndex = -1;
   let expandedRiderIndex = -1;
   let splitsModalRiderId = null;
   let clockTimer = null;
@@ -576,6 +577,33 @@
   function openModal(id){ $(id).classList.add("show"); }
   function closeModal(id){ $(id).classList.remove("show"); }
 
+  function closeRemoveRiderModal(){
+    pendingRemoveRiderIndex = -1;
+    closeModal("removeRiderModal");
+  }
+
+  function openRemoveRiderModal(index){
+    if(!draft || draft.riders.length <= 1) return;
+    const rider = draft.riders[index];
+    if(!rider) return;
+    pendingRemoveRiderIndex = index;
+    const name = String(rider.name || "").trim();
+    $("removeRiderText").textContent = name
+      ? `This removes ${name} from the list.`
+      : "This removes the rider from the list.";
+    openModal("removeRiderModal");
+  }
+
+  function confirmRemoveRider(){
+    const index = pendingRemoveRiderIndex;
+    closeRemoveRiderModal();
+    if(!draft || draft.riders.length <= 1) return;
+    if(index < 0 || index >= draft.riders.length) return;
+    draft.riders.splice(index, 1);
+    if(index < expandedRiderIndex) expandedRiderIndex -= 1;
+    renderRiderEditors();
+  }
+
   function syncSplitsMore(){
     const list = $("splitsList");
     const more = $("splitsMore");
@@ -702,9 +730,7 @@
       });
       wrap.querySelector(".remove-rider").addEventListener("click", () => {
         if(draft.riders.length <= 1) return;
-        draft.riders.splice(index, 1);
-        if(index < expandedRiderIndex) expandedRiderIndex -= 1;
-        renderRiderEditors();
+        openRemoveRiderModal(index);
       });
       riderEditors.appendChild(wrap);
     });
@@ -1516,6 +1542,12 @@
       pendingSetupSave = false;
       closeModal("setupWarnModal");
     }
+  });
+
+  $("removeRiderCloseBtn").addEventListener("click", closeRemoveRiderModal);
+  $("removeRiderConfirmBtn").addEventListener("click", confirmRemoveRider);
+  $("removeRiderModal").addEventListener("click", e => {
+    if(e.target === $("removeRiderModal")) closeRemoveRiderModal();
   });
 
   $("undoBtn").addEventListener("click", undo);
