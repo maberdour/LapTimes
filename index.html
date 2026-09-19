@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="LT Coach">
-<meta name="laptap-coach-version" content="laptap-coach-v62">
+<meta name="laptap-coach-version" content="laptap-coach-v63">
 <title>Lap Tracker</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
@@ -450,13 +450,13 @@
   }
   .grid[data-riders="3"] .card{
     display:grid;
-    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-columns:minmax(0,.72fr) minmax(0,1.28fr);
     grid-template-rows:auto auto 1fr;
     grid-template-areas:
       "name status"
       "id status"
       "footer status";
-    column-gap:10px;
+    column-gap:8px;
     row-gap:4px;
     align-items:start;
     padding:12px 14px;
@@ -474,7 +474,7 @@
     grid-area:status;
     align-self:stretch;
     justify-self:stretch;
-    gap:clamp(4px,2.5cqh,10px);
+    gap:clamp(2px,1.5cqh,6px);
   }
   .grid[data-riders="3"] .card-footer{
     grid-area:footer;
@@ -482,12 +482,21 @@
     gap:4px;
   }
   .grid[data-riders="3"] .card-laps{
-    font-size:clamp(52px,min(58cqh,46cqw),140px);
+    font-size:clamp(96px,min(84cqh,62cqw),200px);
+  }
+  .grid[data-riders="3"] .card-caption{
+    font-size:clamp(22px,14cqh,36px);
   }
   .grid[data-riders="3"] .card.start .card-caption,
   .grid[data-riders="3"] .card.to-line .card-caption,
   .grid[data-riders="3"] .card.finished .card-caption{
-    font-size:clamp(18px,12cqh,34px);
+    font-size:clamp(28px,18cqh,48px);
+  }
+  .grid[data-riders="3"] .card-hint{
+    font-size:clamp(16px,9cqh,24px);
+  }
+  .grid[data-riders="3"] .card-next{
+    font-size:clamp(20px,12cqh,32px);
   }
   .grid[data-riders="3"] .card-next,
   .grid[data-riders="3"] .card.to-line .card-caption{
