@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="LT Coach">
-<meta name="laptap-coach-version" content="laptap-coach-v56">
+<meta name="laptap-coach-version" content="laptap-coach-v62">
 <title>Lap Tracker</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
@@ -438,15 +438,9 @@
   .grid[data-riders="2"] .card-name{
     font-size:clamp(26px,13cqh,44px);
   }
-  .grid[data-riders="3"] .card-name{
-    font-size:clamp(22px,11cqh,34px);
-  }
   .grid[data-riders="1"] .card-id,
   .grid[data-riders="2"] .card-id{
     font-size:clamp(13px,6cqh,20px);
-  }
-  .grid[data-riders="3"] .card-id{
-    font-size:clamp(12px,6cqh,16px);
   }
   .grid[data-riders="1"] .card-progress,
   .grid[data-riders="1"] .card-time,
@@ -454,9 +448,54 @@
   .grid[data-riders="2"] .card-time{
     font-size:clamp(22px,11cqh,36px);
   }
+  .grid[data-riders="3"] .card{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+    grid-template-rows:auto auto 1fr;
+    grid-template-areas:
+      "name status"
+      "id status"
+      "footer status";
+    column-gap:10px;
+    row-gap:4px;
+    align-items:start;
+    padding:12px 14px;
+  }
+  .grid[data-riders="3"] .card-name{
+    grid-area:name;
+    font-size:clamp(20px,14cqh,32px);
+    overflow-wrap:anywhere;
+  }
+  .grid[data-riders="3"] .card-id{
+    grid-area:id;
+    font-size:clamp(12px,6.5cqh,16px);
+  }
+  .grid[data-riders="3"] .card-status{
+    grid-area:status;
+    align-self:stretch;
+    justify-self:stretch;
+    gap:clamp(4px,2.5cqh,10px);
+  }
+  .grid[data-riders="3"] .card-footer{
+    grid-area:footer;
+    align-self:end;
+    gap:4px;
+  }
+  .grid[data-riders="3"] .card-laps{
+    font-size:clamp(52px,min(58cqh,46cqw),140px);
+  }
+  .grid[data-riders="3"] .card.start .card-caption,
+  .grid[data-riders="3"] .card.to-line .card-caption,
+  .grid[data-riders="3"] .card.finished .card-caption{
+    font-size:clamp(18px,12cqh,34px);
+  }
+  .grid[data-riders="3"] .card-next,
+  .grid[data-riders="3"] .card.to-line .card-caption{
+    white-space:normal;
+  }
   .grid[data-riders="3"] .card-progress,
   .grid[data-riders="3"] .card-time{
-    font-size:clamp(18px,9cqh,26px);
+    font-size:clamp(18px,11cqh,26px);
   }
   .card.finished{
     background:#ffffff;
@@ -702,6 +741,12 @@
   .splits-list .split-row{
     border:none;
     padding:2px 4px;
+  }
+  .splits-list .split-label{
+    font-size:16px;
+  }
+  .splits-list .split-time{
+    font-size:18px;
   }
   .split-label{
     font-size:22px;
