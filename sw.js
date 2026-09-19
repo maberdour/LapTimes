@@ -1,21 +1,25 @@
-const CACHE = "laptap-coach-v72";
+const CACHE = "laptap-coach-v73";
 const PRECACHE = [
   "./",
   "./index.html",
   "./app.js",
   "./manifest.json",
-  "./icons/favicon-32.png",
-  "./icons/apple-touch-icon.png",
-  "./icons/icon-192.png",
-  "./icons/icon-512.png",
-  "./icons/icon-512-maskable.png",
+  "./icons/favicon-32.png?v=73",
+  "./icons/apple-touch-icon.png?v=73",
+  "./icons/icon-192.png?v=73",
+  "./icons/icon-512.png?v=73",
+  "./icons/icon-512-maskable.png?v=73",
   "./bell.wav"
 ];
 
 self.addEventListener("install", event => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE);
-    await cache.addAll(PRECACHE);
+    await Promise.all(PRECACHE.map(async path => {
+      const res = await fetch(path, { cache: "reload" });
+      if(!res.ok) throw new Error("Precache failed: " + path);
+      await cache.put(path, res);
+    }));
     await self.skipWaiting();
   })());
 });
