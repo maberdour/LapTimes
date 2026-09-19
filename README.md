@@ -32,15 +32,6 @@ Sessions stay on the device until it is reset. Install the app to the home scree
 
 Changing rider names or colours keeps recorded laps. Changing the number of laps resets the session.
 
-## Run locally
-This is a static site: `index.html`, `app.js`, `sw.js`, and `manifest.json`. Serve the folder over HTTP so the service worker and install prompt can run.
-
-```bash
-python3 -m http.server 8080
-```
-
-Then open [http://localhost:8080](http://localhost:8080).
-
 ## Stack
 - Vanilla HTML, CSS, and JavaScript. No build step and no dependencies. 
 - GitHub Pages (or equivalent) hosts the site via the `CNAME` for `coach.letsrace.cc`.
