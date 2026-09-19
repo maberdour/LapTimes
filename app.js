@@ -250,7 +250,7 @@
       return `<div class="card-caption">${view.openingLabel}</div><div class="card-next">${view.nextLabel}</div>`;
     }
     if(view.status === "finished"){
-      return `<div class="card-caption">FINISHED</div>`;
+      return `<div class="card-caption">FINISHED</div><div class="card-hint">Tap for Lap Times</div>`;
     }
     return `<div class="card-caption">START</div>`;
   }
@@ -817,7 +817,7 @@
         btn.style.color = color.fg;
         btn.style.borderColor = border;
       }
-      const splitsHint = view.status === "finished" ? ", tap for lap splits" : "";
+      const splitsHint = view.status === "finished" ? ", tap for lap times" : "";
       btn.setAttribute("aria-label", `${rider.name}, ${rider.identifier}, ${view.label}, ${view.progress}, ${formatTime(view.elapsed)}${splitsHint}`);
       btn.innerHTML = `
         <div class="card-name">${escapeHtml(rider.name)}</div>
