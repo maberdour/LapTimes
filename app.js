@@ -705,11 +705,12 @@
         draft.riders.splice(index, 1);
         if(index < expandedRiderIndex) expandedRiderIndex -= 1;
         renderRiderEditors();
-        $("addRiderBtn").disabled = draft.riders.length >= 4;
       });
       riderEditors.appendChild(wrap);
     });
-    $("addRiderBtn").disabled = draft.riders.length >= 4;
+    const atMax = draft.riders.length >= 4;
+    $("addRiderBtn").classList.toggle("hidden", atMax);
+    $("riderLimitNote").classList.toggle("hidden", !atMax);
   }
 
   function fillSetup(){
