@@ -187,7 +187,7 @@
   let session = loadSession();
 
   function sessionReady(){
-    return session.riders.length > 0 && session.riders.every(r => r.name && r.identifier);
+    return session.riders.length > 0 && session.riders.every(r => r.name);
   }
 
   function sessionUnderway(){
@@ -695,7 +695,7 @@
             <input data-field="name" type="text" maxlength="24" autocomplete="off" value="${escapeHtml(rider.name)}">
           </div>
           <div class="field">
-            <label>Visual identifier</label>
+            <label>Visual identifier <span class="optional">(optional)</span></label>
             <input data-field="identifier" type="text" maxlength="32" autocomplete="off" placeholder="White helmet" value="${escapeHtml(rider.identifier)}">
           </div>
           <div class="field">
@@ -763,8 +763,8 @@
       identifier: r.identifier
     }, i));
     if(!draft.riders.length) return "Add at least one rider.";
-    if(draft.riders.some(r => !r.name || !r.identifier)) return "Each rider needs a name and a visual identifier.";
-    const ids = draft.riders.map(r => r.identifier.toLowerCase());
+    if(draft.riders.some(r => !r.name)) return "Each rider needs a name.";
+    const ids = draft.riders.map(r => r.identifier.toLowerCase()).filter(Boolean);
     if(new Set(ids).size !== ids.length) return "Each rider needs a different visual identifier.";
     if(draft.course.id === "custom" && draft.course.openingLaps < 0) return "Opening segment cannot be negative.";
     return "";
@@ -823,6 +823,7 @@
         && (now - finalFlashAt[rider.id]) < FINAL_FLASH_MS;
       btn.dataset.riderId = rider.id;
       btn.classList.add(view.status);
+      if(!rider.identifier) btn.classList.add("no-id");
       btn.style.setProperty("--card-bg", color.bg);
       btn.style.setProperty("--card-fg", color.fg);
       btn.style.setProperty("--card-border", border);
@@ -844,10 +845,11 @@
         btn.style.borderColor = border;
       }
       const splitsHint = view.status === "finished" ? ", tap for lap times" : "";
-      btn.setAttribute("aria-label", `${rider.name}, ${rider.identifier}, ${view.label}, ${view.progress}, ${formatTime(view.elapsed)}${splitsHint}`);
+      const ariaParts = [rider.name, rider.identifier, view.label, view.progress, formatTime(view.elapsed)].filter(Boolean);
+      btn.setAttribute("aria-label", `${ariaParts.join(", ")}${splitsHint}`);
       btn.innerHTML = `
         <div class="card-name">${escapeHtml(rider.name)}</div>
-        <div class="card-id">${escapeHtml(rider.identifier)}</div>
+        ${rider.identifier ? `<div class="card-id">${escapeHtml(rider.identifier)}</div>` : ""}
         <div class="card-status">${statusMarkup(view)}</div>
         <div class="card-footer">
           <div class="card-progress">${view.progress}</div>
@@ -1431,7 +1433,8 @@
       const stats = statsFor(rider);
       const total = view.status === "finished" ? formatTime(view.elapsed) : "—";
       const avg = stats ? formatTime(stats.avg) : "—";
-      return `${rider.name} · ${rider.identifier}: ${total}  avg ${avg}`;
+      const label = rider.identifier ? `${rider.name} · ${rider.identifier}` : rider.name;
+      return `${label}: ${total}  avg ${avg}`;
     });
     return [`Lap Times · ${session.course.name}`, ...lines].join("\n");
   }

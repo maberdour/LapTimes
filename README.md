@@ -12,7 +12,7 @@ Sessions stay on the device until it is reset. Install the app to the home scree
 
 ## Features
 
-- Up to four riders, each with a name, visual identifier, and colour
+- Up to four riders, each with a name, colour, and optional visual identifier
 - Course presets: 6, 12, or 18 laps, 10 miles, or a custom opening segment plus full laps
 - Independent starts so riders do not have to go off together
 - An Undo feature if you tap a lap prematurely
@@ -26,7 +26,7 @@ Sessions stay on the device until it is reset. Install the app to the home scree
 
 ## Using it
 1. Open the URL and install it to the home screen when prompted (recommended).
-2. Set the distance and add riders. Each rider needs a name and a unique visual identifier (kit colour, number, etc.).
+2. Set the distance and add riders. Each rider needs a name. A visual identifier (kit colour, number, etc.) is optional, and unique if used.
 3. On the timing grid, tap a rider to start them, then tap again at each crossing.
 4. A finished rider’s card opens their splits. Use **Results** for totals, **Share Excel** to export, or **Reset times** to clear the session.
 

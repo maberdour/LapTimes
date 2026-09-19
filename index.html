@@ -8,11 +8,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lap Times">
-<meta name="laptap-coach-version" content="laptap-coach-v73">
+<meta name="laptap-coach-version" content="laptap-coach-v74">
 <title>Lap Times</title>
 <link rel="manifest" href="./manifest.json">
-<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=73">
-<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=73">
+<link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=74">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png?v=74">
 <style>
   :root{
     --bg:#000000;
@@ -59,6 +59,10 @@
     margin-bottom:6px;
     font-size:16px;
     font-weight:800;
+  }
+  .field label .optional{
+    font-weight:700;
+    opacity:.55;
   }
   .field input,
   .field select,
@@ -364,6 +368,7 @@
     text-transform:uppercase;
     line-height:1.1;
   }
+  .card-id:empty{display:none}
   .card-status{
     flex:1;
     display:flex;
@@ -403,6 +408,12 @@
   }
   .card.finished .card-status{
     gap:clamp(8px,3cqh,16px);
+  }
+  .grid[data-riders="4"] .card-status{
+    gap:clamp(1px,0.8cqh,4px);
+  }
+  .grid[data-riders="4"] .card-laps{
+    font-size:clamp(36px,min(22cqh,42cqw),72px);
   }
   .grid[data-riders="4"] .card-hint{
     font-size:clamp(11px,5cqh,14px);
@@ -469,6 +480,12 @@
   .grid[data-riders="3"] .card-id{
     grid-area:id;
     font-size:clamp(12px,6.5cqh,16px);
+  }
+  .grid[data-riders="3"] .card.no-id{
+    grid-template-rows:auto 1fr;
+    grid-template-areas:
+      "name status"
+      "footer status";
   }
   .grid[data-riders="3"] .card-status{
     grid-area:status;

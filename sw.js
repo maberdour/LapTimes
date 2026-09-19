@@ -1,14 +1,14 @@
-const CACHE = "laptap-coach-v73";
+const CACHE = "laptap-coach-v74";
 const PRECACHE = [
   "./",
   "./index.html",
   "./app.js",
   "./manifest.json",
-  "./icons/favicon-32.png?v=73",
-  "./icons/apple-touch-icon.png?v=73",
-  "./icons/icon-192.png?v=73",
-  "./icons/icon-512.png?v=73",
-  "./icons/icon-512-maskable.png?v=73",
+  "./icons/favicon-32.png?v=74",
+  "./icons/apple-touch-icon.png?v=74",
+  "./icons/icon-192.png?v=74",
+  "./icons/icon-512.png?v=74",
+  "./icons/icon-512-maskable.png?v=74",
   "./bell.wav"
 ];
 
