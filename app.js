@@ -3,7 +3,7 @@
   const INSTALL_HINT_KEY = "laptapCoachInstallHintDismissed";
   const COMPACT_SESSION_KEY = "laptapCoachInstallCompactDismissed";
   const TAP_COOLDOWN_MS = 500;
-  const CLOCK_MS = 100;
+  const CLOCK_MS = 10;
   const FLASH_MS = 600;
   const FINAL_FLASH_MS = 10000;
   const FINAL_FLASH_PERIOD_MS = 2000;
@@ -72,16 +72,16 @@
   }
 
   function formatTime(ms){
-    const tenths = Math.max(0, Math.floor(ms / 100));
-    const totalSec = Math.floor(tenths / 10);
-    const t = tenths % 10;
+    const hundredths = Math.max(0, Math.floor(ms / 10));
+    const totalSec = Math.floor(hundredths / 100);
+    const hth = hundredths % 100;
     const h = Math.floor(totalSec / 3600);
     const m = Math.floor((totalSec % 3600) / 60);
     const s = totalSec % 60;
     const core = h > 0
       ? `${h}:${pad(m)}:${pad(s)}`
       : `${m}:${pad(s)}`;
-    return `${core}.${t}`;
+    return `${core}.${pad(hth)}`;
   }
 
   function formatOpeningFraction(n){
@@ -548,24 +548,24 @@
 
     if(kind === "waiting"){
       title.textContent = "Open it from your Home screen";
-      text.textContent = "Leave this browser tab. Use the Lap Tracker icon so it still works with no signal.";
+      text.textContent = "Leave this browser tab. Use the Lap Times icon so it still works with no signal.";
       add.textContent = "Install";
       el.classList.remove("can-install");
     } else if(kind === "ios"){
       title.textContent = "Install for race day";
-      text.textContent = "To use Lap Tracker with no phone signal, install it now and then open from your Home screen. Tap Share, then Add to Home Screen.";
+      text.textContent = "To use Lap Times with no phone signal, install it now and then open from your Home screen. Tap Share, then Add to Home Screen.";
       add.textContent = "Install";
       el.classList.remove("can-install");
     } else if(kind === "manual"){
       title.textContent = "Install for race day";
-      text.textContent = "To use Lap Tracker with no phone signal, install it now and then open from your Home screen. Use your browser menu to install the app, then open it from the Home screen.";
+      text.textContent = "To use Lap Times with no phone signal, install it now and then open from your Home screen. Use your browser menu to install the app, then open it from the Home screen.";
       add.textContent = "Install";
       el.classList.remove("can-install");
     } else if(kind === "compact" || kind === "compact-ios" || kind === "compact-waiting"){
       $("installChip").classList.add("show");
     } else {
       title.textContent = "Install for race day";
-      text.textContent = "To use Lap Tracker with no phone signal, install it now and then open from your Home screen.";
+      text.textContent = "To use Lap Times with no phone signal, install it now and then open from your Home screen.";
       add.textContent = "Install";
       el.classList.add("can-install");
     }
@@ -1098,41 +1098,32 @@
     ]);
   }
 
-  function splitRows(){
-    const header = ["Rider", "Identifier", "Course", "Segment", "Segment type", "Segment distance", "Split", "Elapsed"];
-    const rows = [header];
-    session.riders.forEach(rider => {
-      splitsFor(rider).forEach(split => {
-        rows.push([
-          split.rider,
-          split.identifier,
-          split.course,
-          split.segment,
-          split.type,
-          split.distance,
-          formatTime(split.split),
-          formatTime(split.elapsed)
-        ]);
-      });
+  function exportRows(){
+    const opening = session.course.openingLaps > 0;
+    const splitCount = Math.max(
+      neededCrossings(session.course),
+      ...session.riders.map(rider => (session.crossings[rider.id] || []).length)
+    );
+    const lapHeaders = Array.from({ length: splitCount }, (_, i) => {
+      if(opening && i === 0) return "Opening";
+      return `Lap ${opening ? i : i + 1}`;
     });
-    return rows;
-  }
-
-  function summaryRows(){
-    const header = ["Rider", "Identifier", "Course", "Total", "Avg full lap", "Fastest full lap", "Slowest full lap"];
+    const header = ["Rider", "Course", "Total", "Avg lap", "Fastest lap", "Slowest lap", ...lapHeaders];
     const rows = [header];
     session.riders.forEach(rider => {
       const started = session.startedAt[rider.id];
       const finished = session.finishedAt[rider.id];
       const stats = statsFor(rider);
+      const splits = splitsFor(rider);
+      const lapTimes = Array.from({ length: splitCount }, (_, i) => splits[i] ? formatTime(splits[i].split) : "");
       rows.push([
         rider.name,
-        rider.identifier,
         session.course.name,
         finished && started ? formatTime(finished - started) : "",
         stats ? formatTime(stats.avg) : "",
         stats ? formatTime(stats.fastest) : "",
-        stats ? formatTime(stats.slowest) : ""
+        stats ? formatTime(stats.slowest) : "",
+        ...lapTimes
       ]);
     });
     return rows;
@@ -1148,7 +1139,6 @@
 <Default Extension="xml" ContentType="application/xml"/>
 <Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>
 <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
-<Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
 </Types>`
       },
       {
@@ -1163,8 +1153,7 @@
         data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
 <sheets>
-<sheet name="Summary" sheetId="1" r:id="rId1"/>
-<sheet name="Splits" sheetId="2" r:id="rId2"/>
+<sheet name="Results" sheetId="1" r:id="rId1"/>
 </sheets>
 </workbook>`
       },
@@ -1173,11 +1162,9 @@
         data: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
 <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
-<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
 </Relationships>`
       },
-      { name: "xl/worksheets/sheet1.xml", data: xlsxSheetXml(summaryRows()) },
-      { name: "xl/worksheets/sheet2.xml", data: xlsxSheetXml(splitRows()) }
+      { name: "xl/worksheets/sheet1.xml", data: xlsxSheetXml(exportRows()) }
     ]);
   }
 
@@ -1335,7 +1322,7 @@
     ctx.font = `800 18px ${fontFamily}`;
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-    ctx.fillText("Lap Tracker", pad, y);
+    ctx.fillText("Lap Times", pad, y);
     return canvas;
   }
 
@@ -1347,7 +1334,7 @@
 
   async function shareFiles(files, force){
     if(!navigator.share) return false;
-    const payload = { files, title: "Lap Tracker" };
+    const payload = { files, title: "Lap Times" };
     if(!force){
       try{
         if(navigator.canShare && !navigator.canShare(payload)) return false;
@@ -1409,23 +1396,13 @@
 
   function excelShareCandidates(xlsx){
     const stamp = xlsx.name.replace(/^laptap-coach-|\.xlsx$/g, "");
-    const summaryCsv = new File([rowsToCsv(summaryRows())], `laptap-coach-summary-${stamp}.csv`, { type: "text/csv" });
-    const splitsCsv = new File([rowsToCsv(splitRows())], `laptap-coach-splits-${stamp}.csv`, { type: "text/csv" });
-    const combinedCsv = new File(
-      [rowsToCsv([...summaryRows(), [], ...splitRows()])],
-      `laptap-coach-${stamp}.csv`,
-      { type: "text/csv" }
-    );
-    const plainCsv = new File(
-      [rowsToCsv([...summaryRows(), [], ...splitRows()])],
-      `laptap-coach-${stamp}.csv`,
-      { type: "text/plain" }
-    );
+    const csvBytes = rowsToCsv(exportRows());
+    const csv = new File([csvBytes], `laptap-coach-${stamp}.csv`, { type: "text/csv" });
+    const plainCsv = new File([csvBytes], `laptap-coach-${stamp}.csv`, { type: "text/plain" });
     return [
       [new File([xlsx.blob], xlsx.name, { type: xlsx.type })],
       [new File([xlsx.blob], xlsx.name, { type: "application/octet-stream" })],
-      [summaryCsv, splitsCsv],
-      [combinedCsv],
+      [csv],
       [plainCsv]
     ];
   }
@@ -1456,7 +1433,7 @@
       const avg = stats ? formatTime(stats.avg) : "—";
       return `${rider.name} · ${rider.identifier}: ${total}  avg ${avg}`;
     });
-    return [`Lap Tracker · ${session.course.name}`, ...lines].join("\n");
+    return [`Lap Times · ${session.course.name}`, ...lines].join("\n");
   }
 
   function downloadWorkbook(){
@@ -1479,7 +1456,7 @@
         if(await shareFiles(files, true)) return;
       }
       try{
-        await navigator.share({ title: "Lap Tracker", text: resultsShareText() });
+        await navigator.share({ title: "Lap Times", text: resultsShareText() });
         return;
       }catch(err){
         if(err && err.name === "AbortError") return;

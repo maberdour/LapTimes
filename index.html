@@ -7,9 +7,9 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<meta name="apple-mobile-web-app-title" content="LT Coach">
-<meta name="laptap-coach-version" content="laptap-coach-v64">
-<title>Lap Tracker</title>
+<meta name="apple-mobile-web-app-title" content="Lap Times">
+<meta name="laptap-coach-version" content="laptap-coach-v72">
+<title>Lap Times</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png">
 <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
@@ -706,13 +706,23 @@
   .splits-panel{
     display:flex;
     flex-direction:column;
-    max-height:min(88dvh, 100%);
-    padding:20px 16px 12px;
+    width:min(560px,100%);
+    height:min(92dvh, calc(100dvh - 24px));
+    max-height:calc(100dvh - 24px);
+    padding:20px 16px 16px;
     text-align:left;
+  }
+  .splits-panel .modal-close{
+    top:16px;
+    right:16px;
   }
   .splits-head{
     flex:0 0 auto;
-    margin:0 68px 14px 0;
+    display:flex;
+    align-items:center;
+    min-height:56px;
+    margin:0 68px 22px 0;
+    padding:6px 0 8px;
   }
   .splits-panel .modal-title{
     margin:0;
@@ -725,13 +735,14 @@
   .splits-scroll-wrap{
     position:relative;
     min-height:0;
-    flex:1;
+    flex:1 1 auto;
   }
   .splits-list{
     display:flex;
     flex-direction:column;
-    gap:2px;
-    max-height:min(42dvh, 360px);
+    gap:6px;
+    height:100%;
+    max-height:none;
     overflow-y:auto;
     overscroll-behavior:contain;
     -webkit-overflow-scrolling:touch;
@@ -743,7 +754,7 @@
     justify-content:space-between;
     gap:12px;
     min-height:0;
-    padding:4px 10px;
+    padding:10px 12px;
     border:3px solid #ffffff;
     border-radius:12px;
     font-weight:800;
@@ -751,7 +762,7 @@
   }
   .splits-list .split-row{
     border:none;
-    padding:2px 4px;
+    padding:6px 4px;
   }
   .splits-list .split-label{
     font-size:16px;
@@ -772,8 +783,8 @@
     flex:0 0 auto;
     display:flex;
     flex-direction:column;
-    gap:4px;
-    margin-bottom:10px;
+    gap:12px;
+    margin-bottom:16px;
   }
   .splits-summary .split-row{
     background:#ffffff;
@@ -816,7 +827,7 @@
 </head>
 <body>
 <section class="screen setup-screen" id="setupScreen">
-  <h1>Lap Tracker</h1>
+  <h1>Lap Times</h1>
   <div class="field">
     <label for="coursePreset">Distance</label>
     <select id="coursePreset">
@@ -850,7 +861,7 @@
 
 <section class="screen timing-screen" id="timingScreen">
   <div class="timing-header">
-    <h1>Lap Tracker</h1>
+    <h1>Lap Times</h1>
     <button class="small install-chip" id="installChip" type="button">Install</button>
     <button class="small setup-btn" id="setupBtn" type="button" aria-label="Rider settings">
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -884,7 +895,7 @@
   <div class="install-hint-panel">
     <div class="install-hint-copy">
       <strong id="installHintTitle">Install for race day</strong>
-      <span id="installHintText">To use Lap Tracker with no phone signal, install it now and then open from your Home screen.</span>
+      <span id="installHintText">To use Lap Times with no phone signal, install it now and then open from your Home screen.</span>
     </div>
     <button class="install-hint-add" id="installHintAdd" type="button">Install</button>
     <button class="install-hint-dismiss" id="installHintDismiss" type="button">Not now</button>

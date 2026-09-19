@@ -16,13 +16,13 @@ Two sibling PWAs. No shared library. When a PWA/install/wake-lock bug is fixed i
 - Screen Wake Lock while anyone is racing; reacquire on `visibilitychange`
 - `Date.now()` event timestamps; interval clock is display only
 - Undo history stack; reset confirm modal
-- `formatTime` to tenths (`m:ss.t`)
 - Register the service worker only when the page is not `file:`
 - Canvas confetti on finish (same particle burst as LapTap)
 
 ## Keep distinct
 
 - Storage key `laptapCoach.v1`, cache name `laptap-coach-v1`, manifest id/start_url, icons, title
+- `formatTime` to hundredths (`m:ss.hh`), not LapTap’s tenths
 - Layout: full-width stacked cards for 1–3 riders, 2x2 for 4; not LapTap’s sequential discipline phases
 - Timing: opening segment + full laps (default 6 laps, opening 0)
 - Per-rider tap debounce, not LapTap’s global 800 ms cooldown

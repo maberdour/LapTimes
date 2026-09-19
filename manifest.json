@@ -1,7 +1,7 @@
 {
   "id": "https://coach.letsrace.cc/",
-  "name": "Lap Tracker",
-  "short_name": "LT Coach",
+  "name": "Lap Times",
+  "short_name": "Lap Times",
   "description": "Time up to four riders. Works offline.",
   "start_url": "./",
   "scope": "./",
