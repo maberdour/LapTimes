@@ -8,6 +8,7 @@
   const FINAL_FLASH_MS = 10000;
   const FINAL_FLASH_PERIOD_MS = 2000;
   const FINAL_BELL_S = 2;
+  const CELEBRATE_MS = 600;
 
   const COLORS = [
     { id: "white", bg: "#ffffff", fg: "#000000" },
@@ -45,6 +46,7 @@
   let finalFlashAt = {};
   let finalFlashTimers = {};
   let lastTapAt = {};
+  let celebrateAt = {};
   let pendingSetupSave = false;
   let expandedRiderIndex = -1;
   let splitsModalRiderId = null;
@@ -295,6 +297,7 @@
     resultsScreen.classList.toggle("show", name === "results");
     document.body.classList.toggle("timing-lock", name === "timing");
     if(name !== "setup") draft = null;
+    if(name !== "timing") clearCelebrateLayer();
     if(name === "timing") startClock();
     else if(name === "results"){
       startClock();
@@ -313,6 +316,73 @@
     if(kind === "finish") navigator.vibrate([80, 40, 80]);
     else if(kind === "final") navigator.vibrate([40, 40, 80]);
     else navigator.vibrate(40);
+  }
+
+  function reducedMotion(){
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  }
+
+  function clearCelebrateLayer(){
+    const layer = $("celebrateLayer");
+    if(layer) layer.innerHTML = "";
+  }
+
+  function burstCelebrate(rider){
+    if(reducedMotion()) return;
+    const card = grid.querySelector(`[data-rider-id="${rider.id}"]`);
+    const layer = $("celebrateLayer");
+    if(!card || !layer) return;
+    const rect = card.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const color = colorById(rider.color);
+    const palette = [color.bg, "#ffffff", "#000000", color.fg];
+    const ring = document.createElement("div");
+    ring.className = "celebrate-ring";
+    ring.style.left = `${rect.left}px`;
+    ring.style.top = `${rect.top}px`;
+    ring.style.width = `${rect.width}px`;
+    ring.style.height = `${rect.height}px`;
+    ring.style.borderColor = color.bg === "#ffffff" ? "#000000" : color.bg;
+    const dropRing = () => ring.remove();
+    ring.addEventListener("animationend", dropRing);
+    setTimeout(dropRing, 800);
+    layer.appendChild(ring);
+
+    const count = Number(grid.dataset.riders) === 4 ? 20 : 32;
+    const radius = Math.min(rect.width, rect.height) * 0.58;
+    for(let i = 0; i < count; i++){
+      const piece = document.createElement("span");
+      piece.className = "celebrate-piece";
+      const w = 12 + Math.random() * 14;
+      const h = 18 + Math.random() * 22;
+      const bg = palette[i % palette.length];
+      piece.style.width = `${w}px`;
+      piece.style.height = `${h}px`;
+      piece.style.left = `${cx}px`;
+      piece.style.top = `${cy}px`;
+      piece.style.background = bg;
+      piece.style.boxShadow = bg === "#000000" || (bg === color.bg && color.fg === "#ffffff")
+        ? "0 0 0 2px #ffffff"
+        : "0 0 0 2px #000000";
+      layer.appendChild(piece);
+      const angle = (Math.PI * 2 * i) / count + (Math.random() - 0.5) * 0.28;
+      const dist = radius + Math.random() * radius * 0.85;
+      const dx = Math.cos(angle) * dist;
+      const dy = Math.sin(angle) * dist - 28;
+      const rot = Math.random() * 480 - 240;
+      const anim = piece.animate([
+        { transform: `translate(${-w / 2}px, ${-h / 2}px) rotate(0deg) scale(1)`, opacity: 1, offset: 0 },
+        { transform: `translate(${dx * 0.6 - w / 2}px, ${dy * 0.6 - h / 2}px) rotate(${rot * 0.55}deg) scale(1)`, opacity: 1, offset: 0.62 },
+        { transform: `translate(${dx - w / 2}px, ${dy - h / 2}px) rotate(${rot}deg) scale(.5)`, opacity: 0, offset: 1 }
+      ], {
+        duration: 1200 + Math.random() * 280,
+        delay: i * 10,
+        easing: "cubic-bezier(.12,.72,.28,1)",
+        fill: "forwards"
+      });
+      anim.onfinish = () => piece.remove();
+    }
   }
 
   function getAudioCtx(){
@@ -730,6 +800,14 @@
         btn.classList.add("final-flash");
         btn.style.animationDelay = `-${(now - finalFlashAt[rider.id]) % FINAL_FLASH_PERIOD_MS}ms`;
       }
+      const celebrating = view.status === "finished"
+        && celebrateAt[rider.id]
+        && (now - celebrateAt[rider.id]) < CELEBRATE_MS
+        && !reducedMotion();
+      if(celebrating){
+        btn.classList.add("celebrate");
+        btn.style.setProperty("--celebrate-delay", `-${now - celebrateAt[rider.id]}ms`);
+      }
       if(view.status === "finished"){
         btn.style.background = "#ffffff";
         btn.style.color = "#000000";
@@ -821,12 +899,16 @@
       session.finishedAt[riderId] = now;
       session.history.push({ type: "finish", riderId, at: now });
       clearFinalFlash(riderId);
+      celebrateAt[riderId] = now;
       haptic("finish");
-    } else {
-      session.history.push({ type: "crossing", riderId, at: now });
-      if(after.status === "final" && before.status !== "final") enterFinalLap(riderId);
-      else haptic("tick");
+      save();
+      renderTiming();
+      burstCelebrate(rider);
+      return;
     }
+    session.history.push({ type: "crossing", riderId, at: now });
+    if(after.status === "final" && before.status !== "final") enterFinalLap(riderId);
+    else haptic("tick");
     save();
     renderTiming();
   }
@@ -840,6 +922,8 @@
       delete session.startedAt[id];
     } else if(last.type === "finish"){
       delete session.finishedAt[id];
+      delete celebrateAt[id];
+      clearCelebrateLayer();
       if(session.crossings[id]?.length) session.crossings[id].pop();
     } else if(session.crossings[id]?.length){
       session.crossings[id].pop();
@@ -856,6 +940,8 @@
     Object.assign(session, emptyTiming());
     flashUntil = {};
     lastTapAt = {};
+    celebrateAt = {};
+    clearCelebrateLayer();
     clearAllFinalFlash();
     save();
     closeModal("resetModal");
