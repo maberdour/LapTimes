@@ -950,13 +950,10 @@
     const now = Date.now();
     const rows = session.riders.map(rider => {
       const view = riderView(rider, now);
-      const stats = view.status === "finished" ? statsFor(rider) : null;
       const total = view.status === "finished" ? formatTime(view.elapsed) : "—";
-      const avg = stats ? formatTime(stats.avg) : "—";
       return `<tr>
         <td>${escapeHtml(rider.name)}</td>
         <td>${total}</td>
-        <td>${avg}</td>
       </tr>`;
     }).join("");
     $("resultsBody").innerHTML = `
@@ -965,7 +962,6 @@
           <tr>
             <th>Rider</th>
             <th>Total</th>
-            <th>Avg lap</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
