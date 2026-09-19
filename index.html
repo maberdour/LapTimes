@@ -334,7 +334,7 @@
     overflow:hidden;
   }
   .card-name{
-    font-size:clamp(14px,7cqh,22px);
+    font-size:clamp(20px,10cqh,30px);
     font-weight:1000;
     text-transform:uppercase;
     line-height:1.05;
@@ -389,27 +389,26 @@
   }
   .card-footer{
     display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    gap:8px;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:6px;
     margin-top:2px;
   }
   .card-progress,
   .card-time{
-    font-size:clamp(12px,6cqh,18px);
+    font-size:clamp(18px,9cqh,28px);
     font-weight:800;
     font-variant-numeric:tabular-nums;
     line-height:1;
     white-space:nowrap;
+    text-align:left;
   }
-  .card-progress{text-align:left}
-  .card-time{text-align:right;margin-left:auto}
   .grid[data-riders="1"] .card-name,
   .grid[data-riders="2"] .card-name{
-    font-size:clamp(18px,9cqh,32px);
+    font-size:clamp(26px,13cqh,44px);
   }
   .grid[data-riders="3"] .card-name{
-    font-size:clamp(16px,8cqh,24px);
+    font-size:clamp(22px,11cqh,34px);
   }
   .grid[data-riders="1"] .card-id,
   .grid[data-riders="2"] .card-id{
@@ -422,16 +421,11 @@
   .grid[data-riders="1"] .card-time,
   .grid[data-riders="2"] .card-progress,
   .grid[data-riders="2"] .card-time{
-    font-size:clamp(14px,7cqh,24px);
+    font-size:clamp(22px,11cqh,36px);
   }
   .grid[data-riders="3"] .card-progress,
   .grid[data-riders="3"] .card-time{
-    font-size:clamp(13px,7cqh,18px);
-  }
-  .card.final{
-    background:#000000;
-    color:#ffffff;
-    border-color:#ffffff;
+    font-size:clamp(18px,9cqh,26px);
   }
   .card.finished{
     background:#ffffff;
@@ -443,8 +437,8 @@
     outline-offset:-2px;
   }
   @keyframes final-flash{
-    0%,49.9%{background-color:#000000;color:#ffffff;border-color:#ffffff}
-    50%,100%{background-color:#ffffff;color:#000000;border-color:#ffffff}
+    0%,49.9%{background-color:var(--card-bg);color:var(--card-fg);border-color:var(--card-border)}
+    50%,100%{background-color:var(--flash-bg);color:var(--flash-fg);border-color:var(--flash-border)}
   }
   .card.final-flash{
     animation:final-flash 2s steps(1) infinite;

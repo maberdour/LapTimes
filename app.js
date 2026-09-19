@@ -712,24 +712,32 @@
       btn.className = "card";
       const view = riderView(rider, now);
       const color = colorById(rider.color);
-      const inverted = view.status === "final";
+      const border = color.border || color.bg;
+      const darkCard = color.fg === "#ffffff";
       const flashing = view.status === "final"
         && finalFlashAt[rider.id]
         && (now - finalFlashAt[rider.id]) < FINAL_FLASH_MS;
       btn.dataset.riderId = rider.id;
       btn.classList.add(view.status);
+      btn.style.setProperty("--card-bg", color.bg);
+      btn.style.setProperty("--card-fg", color.fg);
+      btn.style.setProperty("--card-border", border);
+      btn.style.setProperty("--flash-bg", darkCard ? "#ffffff" : "#000000");
+      btn.style.setProperty("--flash-fg", darkCard ? "#000000" : "#ffffff");
+      btn.style.setProperty("--flash-border", "#ffffff");
       if((flashUntil[rider.id] || 0) > now) btn.classList.add("flash");
       if(flashing){
         btn.classList.add("final-flash");
         btn.style.animationDelay = `-${(now - finalFlashAt[rider.id]) % FINAL_FLASH_PERIOD_MS}ms`;
-      } else if(view.status === "finished"){
+      }
+      if(view.status === "finished"){
         btn.style.background = "#ffffff";
         btn.style.color = "#000000";
         btn.style.borderColor = "#ffffff";
       } else {
-        btn.style.background = inverted ? "#000000" : color.bg;
-        btn.style.color = inverted ? "#ffffff" : color.fg;
-        btn.style.borderColor = inverted ? "#ffffff" : (color.border || color.bg);
+        btn.style.background = color.bg;
+        btn.style.color = color.fg;
+        btn.style.borderColor = border;
       }
       const splitsHint = view.status === "finished" ? ", tap for lap splits" : "";
       btn.setAttribute("aria-label", `${rider.name}, ${rider.identifier}, ${view.label}, ${view.progress}, ${formatTime(view.elapsed)}${splitsHint}`);
