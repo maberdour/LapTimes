@@ -1261,34 +1261,22 @@
     ctx.closePath();
   }
 
-  function drawSplitRow(ctx, x, y, w, h, label, time, invert, accent){
+  function drawSplitRow(ctx, x, y, w, h, label, time, invert){
     pathRoundRect(ctx, x, y, w, h, 12);
-    ctx.save();
-    ctx.clip();
     ctx.fillStyle = invert ? "#ffffff" : "#000000";
-    ctx.fillRect(x, y, w, h);
-    if(accent){
-      ctx.fillStyle = accent.bg;
-      ctx.fillRect(x, y, 14, h);
-      if(accent.border){
-        ctx.fillStyle = accent.border;
-        ctx.fillRect(x + 12, y, 2, h);
-      }
-    }
-    ctx.restore();
+    ctx.fill();
     ctx.lineWidth = 3;
     ctx.strokeStyle = "#ffffff";
-    pathRoundRect(ctx, x, y, w, h, 12);
     ctx.stroke();
-    const padX = accent ? 28 : 18;
+    const padX = 18;
     ctx.fillStyle = invert ? "#000000" : "#ffffff";
     ctx.font = `800 26px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif`;
     ctx.textAlign = "left";
     ctx.textBaseline = "middle";
-    ctx.fillText(label, x + padX, y + h / 2, w * 0.52);
+    ctx.fillText(label, x + padX, y + h / 2, w * 0.55);
     ctx.font = `1000 28px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif`;
     ctx.textAlign = "right";
-    ctx.fillText(time, x + w - 18, y + h / 2, w * 0.4);
+    ctx.fillText(time, x + w - padX, y + h / 2, w * 0.4);
   }
 
   function drawSplitsCanvas(rider){
@@ -1368,30 +1356,27 @@
 
   function drawResultsCanvas(){
     const now = Date.now();
-    const width = 720;
-    const pad = 36;
-    const rowH = 72;
-    const gap = 10;
-    const innerW = width - pad * 2;
     const scale = 2;
+    const pad = 14;
+    const border = 2;
+    const cellPadX = 8;
+    const cellPadY = 10;
+    const cellFont = 18;
+    const titleGap = 14;
     const fontFamily = `system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif`;
-    const measure = document.createElement("canvas").getContext("2d");
-    measure.font = `1000 44px ${fontFamily}`;
-    const titleLines = wrapCanvasText(measure, "RESULTS", innerW);
-    measure.font = `800 22px ${fontFamily}`;
-    const metaLines = wrapCanvasText(measure, session.course.name || "Lap Times", innerW);
+    const width = Math.max(320, Math.round(resultsScreen.getBoundingClientRect().width || window.innerWidth || 390));
+    const titleSize = Math.min(40, Math.max(28, Math.round(width * 0.08)));
     const riders = session.riders.map(rider => {
       const view = riderView(rider, now);
       return {
-        label: rider.name || rider.identifier || "Rider",
-        time: view.status === "finished" ? formatTime(view.elapsed) : "—",
-        color: colorById(rider.color)
+        label: rider.name || "",
+        time: view.status === "finished" ? formatTime(view.elapsed) : "—"
       };
     });
-    const titleH = titleLines.length * 50;
-    const metaH = metaLines.length ? metaLines.length * 28 + 8 : 0;
-    const listH = (riders.length + 1) * rowH + riders.length * gap;
-    const height = 18 + pad + titleH + metaH + 22 + listH + 28 + 22 + pad;
+    const lines = [{ label: "Rider", time: "Total" }, ...riders];
+    const rowH = cellPadY * 2 + Math.round(cellFont * 1.2);
+    const tableH = lines.length * rowH + border;
+    const height = pad + titleSize + titleGap + tableH + pad;
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(width * scale);
     canvas.height = Math.round(height * scale);
@@ -1399,47 +1384,39 @@
     ctx.scale(scale, scale);
     ctx.fillStyle = "#000000";
     ctx.fillRect(0, 0, width, height);
-    const stripeW = width / Math.max(1, session.riders.length);
-    session.riders.forEach((rider, i) => {
-      const color = colorById(rider.color);
-      ctx.fillStyle = color.bg;
-      ctx.fillRect(Math.floor(i * stripeW), 0, Math.ceil(stripeW) + 1, 16);
-      if(color.border){
-        ctx.fillStyle = color.border;
-        ctx.fillRect(Math.floor(i * stripeW), 14, Math.ceil(stripeW) + 1, 2);
-      }
-    });
-    let y = 18 + pad;
     ctx.fillStyle = "#ffffff";
+    ctx.font = `1000 ${titleSize}px ${fontFamily}`;
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
-    ctx.font = `1000 44px ${fontFamily}`;
-    titleLines.forEach(line => {
-      ctx.fillText(line, pad, y, innerW);
-      y += 50;
-    });
-    if(metaLines.length){
-      y += 4;
-      ctx.font = `800 22px ${fontFamily}`;
-      metaLines.forEach(line => {
-        ctx.fillText(line, pad, y, innerW);
-        y += 28;
-      });
-      y += 8;
+    if("letterSpacing" in ctx) ctx.letterSpacing = `${(-0.03 * titleSize).toFixed(2)}px`;
+    ctx.fillText("Results", pad, pad, width - pad * 2);
+    if("letterSpacing" in ctx) ctx.letterSpacing = "0px";
+    const tableX = pad;
+    const tableY = pad + titleSize + titleGap;
+    const tableW = width - pad * 2;
+    ctx.font = `800 ${cellFont}px ${fontFamily}`;
+    const timeW = Math.ceil(Math.max(...lines.map(row => ctx.measureText(row.time).width))) + cellPadX * 2 + 8;
+    const nameW = tableW - timeW;
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = border;
+    ctx.beginPath();
+    ctx.rect(tableX + border / 2, tableY + border / 2, tableW - border, tableH - border);
+    ctx.moveTo(tableX + nameW, tableY);
+    ctx.lineTo(tableX + nameW, tableY + tableH);
+    for(let i = 1; i < lines.length; i++){
+      const y = tableY + i * rowH;
+      ctx.moveTo(tableX, y);
+      ctx.lineTo(tableX + tableW, y);
     }
-    y += 18;
-    drawSplitRow(ctx, pad, y, innerW, rowH, "RIDER", "TOTAL", true);
-    y += rowH + gap;
-    riders.forEach(row => {
-      drawSplitRow(ctx, pad, y, innerW, rowH, row.label, row.time, false, row.color);
-      y += rowH + gap;
+    ctx.stroke();
+    ctx.textBaseline = "middle";
+    lines.forEach((row, i) => {
+      const y = tableY + i * rowH + rowH / 2;
+      ctx.textAlign = "left";
+      ctx.fillText(row.label, tableX + cellPadX, y, Math.max(0, nameW - cellPadX * 2));
+      ctx.textAlign = "right";
+      ctx.fillText(row.time, tableX + tableW - cellPadX, y, Math.max(0, timeW - cellPadX * 2));
     });
-    y += 10;
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `800 18px ${fontFamily}`;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "top";
-    ctx.fillText("Lap Times", pad, y);
     return canvas;
   }
 
@@ -1495,11 +1472,11 @@
 
   async function sharePngFile(file, text){
     const title = "Lap Times";
-    const payloads = [
-      { files: [file], title, text },
-      { files: [file], title },
-      { title, text }
-    ];
+    const payloads = [];
+    if(text) payloads.push({ files: [file], title, text });
+    payloads.push({ files: [file], title });
+    payloads.push({ files: [file] });
+    if(text) payloads.push({ title, text });
     const payload = payloads.find(canSharePayload);
     if(payload && await sharePayload(payload)) return true;
     downloadBlob(file, file.name);
@@ -1529,20 +1506,6 @@
     }
   }
 
-  function resultsShareText(){
-    const oneLap = isOneLapCourse();
-    const lines = session.riders.map(rider => {
-      const view = riderView(rider, Date.now());
-      const stats = statsFor(rider);
-      const total = view.status === "finished" ? formatTime(view.elapsed) : "—";
-      const label = rider.identifier ? `${rider.name} · ${rider.identifier}` : rider.name;
-      if(oneLap) return `${label}: ${total}`;
-      const avg = stats ? formatTime(stats.avg) : "—";
-      return `${label}: ${total}  avg ${avg}`;
-    });
-    return [`Lap Times · ${session.course.name}`, ...lines].join("\n");
-  }
-
   function downloadWorkbook(){
     const xlsx = xlsxExport();
     downloadBlob(xlsx.blob, xlsx.name);
@@ -1555,7 +1518,7 @@
     btn.textContent = "Sharing…";
     try{
       const name = `laptap-coach-results-${fileStamp()}.png`;
-      await sharePngFile(canvasPngFile(drawResultsCanvas(), name), resultsShareText());
+      await sharePngFile(canvasPngFile(drawResultsCanvas(), name));
     }finally{
       btn.disabled = false;
       btn.textContent = label;
