@@ -1,7 +1,6 @@
 (() => {
   const STORAGE_KEY = "laptapCoach.v1";
   const INSTALL_HINT_KEY = "laptapCoachInstallHintDismissed";
-  const COMPACT_SESSION_KEY = "laptapCoachInstallCompactDismissed";
   const TAP_COOLDOWN_MS = 500;
   const CLOCK_MS = 10;
   const FLASH_MS = 600;
@@ -40,6 +39,7 @@
   const riderEditors = $("riderEditors");
 
   let deferredInstall = null;
+  let installFinished = false;
   let wakeLock = null;
   let draft = null;
   let flashUntil = {};
@@ -493,6 +493,43 @@
       || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   }
 
+  function isIosSafari(){
+    if(!isIosDevice()) return false;
+    const ua = navigator.userAgent;
+    if(/CriOS|FxiOS|EdgiOS|OPiOS|OPT\/|DuckDuckGo|GSA\//.test(ua)) return false;
+    return /Safari/.test(ua);
+  }
+
+  function iosThirdPartyCanInstall(){
+    const ua = navigator.userAgent;
+    if(!/iPhone|iPad|iPod/.test(ua)) return true;
+    const match = ua.match(/OS (\d+)[_.](\d+)/);
+    if(!match) return true;
+    const major = Number(match[1]);
+    const minor = Number(match[2]);
+    return major > 16 || (major === 16 && minor >= 4);
+  }
+
+  function isMacSafari(){
+    if(isIosDevice()) return false;
+    const ua = navigator.userAgent;
+    if(!/Macintosh|Mac OS X/.test(ua)) return false;
+    if(/Chrome|Chromium|CriOS|Edg\/|OPR\/|Opera|Firefox|FxiOS/.test(ua)) return false;
+    return /Safari/.test(ua);
+  }
+
+  function isDesktop(){
+    if(isIosDevice()) return false;
+    return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  }
+
+  function isRestrictedBrowser(){
+    const ua = navigator.userAgent;
+    if(/Opera Mini/i.test(ua)) return true;
+    if(/;\s*wv\)/.test(ua)) return true;
+    return /Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|BytedanceWebview|Twitter|Gmail/i.test(ua);
+  }
+
   function isStandalone(){
     return window.navigator.standalone === true
       || window.matchMedia("(display-mode: standalone)").matches;
@@ -506,12 +543,15 @@
     return localStorage.getItem(INSTALL_HINT_KEY) === "1";
   }
 
-  function compactDismissedThisVisit(){
-    try{
-      return sessionStorage.getItem(COMPACT_SESSION_KEY) === "1";
-    }catch{
-      return false;
+  function installKind(){
+    if(deferredInstall) return "prompt";
+    if(isRestrictedBrowser()) return "unavailable";
+    if(isIosDevice()){
+      if(!iosThirdPartyCanInstall() && !isIosSafari()) return "unavailable";
+      return "ios";
     }
+    if(isMacSafari()) return "mac";
+    return "manual";
   }
 
   function installPending(){
@@ -525,59 +565,76 @@
     setupScreen.classList.toggle("install-locked", pending);
     resultsScreen.classList.toggle("install-locked", pending);
     const chip = $("installChip");
-    const compact = Boolean($("installHint")?.classList.contains("compact") && $("installHint")?.classList.contains("show"));
-    chip.classList.toggle("show", compact || (blockDismissed() && canShowInstallUi() && !isStandalone()));
-    if(isStandalone()) chip.classList.remove("show");
+    if(!chip) return;
+    if(!canShowInstallUi() || installFinished){
+      chip.classList.remove("show");
+      return;
+    }
+    chip.classList.toggle("show", !pending);
   }
 
-  function showInstallHint(kind){
+  function showInstallHint(kind, options){
+    const fromUser = Boolean(options && options.fromUser);
     const el = $("installHint");
     const title = $("installHintTitle");
     const text = $("installHintText");
     const add = $("installHintAdd");
+    const dismiss = $("installHintDismiss");
     if(!el || !title || !text || !add || !canShowInstallUi()) return;
-
-    if(kind === "prompt" || kind === "ios" || kind === "manual"){
-      if(blockDismissed()) kind = "compact";
-    }
-    if(kind === "compact" || kind === "compact-ios" || kind === "compact-waiting"){
-      if(compactDismissedThisVisit()){
-        el.classList.remove("show", "compact", "can-install");
-        applyInstallLock();
-        return;
-      }
+    if(installFinished && kind !== "waiting"){
+      applyInstallLock();
+      return;
     }
 
-    const compact = kind === "compact" || kind === "compact-ios" || kind === "compact-waiting";
+    if(!fromUser && kind !== "waiting" && isDesktop()) kind = "compact";
+    if(!fromUser && kind !== "waiting" && kind !== "compact" && blockDismissed()) kind = "compact";
+    if(kind === "prompt" && !deferredInstall) kind = "compact";
+
+    const compact = kind === "compact";
+    const desktop = isDesktop();
+    el.dataset.kind = kind;
     el.classList.toggle("compact", compact);
     el.classList.toggle("show", !compact);
-    el.dataset.kind = kind;
+    el.classList.toggle("can-install", kind === "prompt" && Boolean(deferredInstall));
 
     if(kind === "waiting"){
-      title.textContent = "Open it from your Home screen";
-      text.textContent = "Leave this browser tab. Use the Lap Times icon so it still works with no signal.";
-      add.textContent = "Install";
-      el.classList.remove("can-install");
+      title.textContent = desktop ? "Open the installed app" : "Open it from your Home screen";
+      text.textContent = desktop
+        ? "Leave this browser tab and open Lap Times. This tab stays in the browser."
+        : "Leave this browser tab. Use the Lap Times icon so it still works with no signal.";
+      if(dismiss) dismiss.textContent = "OK";
     } else if(kind === "ios"){
       title.textContent = "Install for race day";
-      text.textContent = "To use Lap Times with no phone signal, install it now and then open from your Home screen. Tap Share, then Add to Home Screen.";
-      add.textContent = "Install";
-      el.classList.remove("can-install");
+      text.textContent = "To use Lap Times with no phone signal, tap Share, then Add to Home Screen, and open the Lap Times icon.";
+      if(dismiss) dismiss.textContent = "Not now";
+    } else if(kind === "mac"){
+      title.textContent = "Install for race day";
+      text.textContent = "In Safari, choose File, then Add to Dock. Open Lap Times from the Dock. This tab stays in the browser.";
+      if(dismiss) dismiss.textContent = "Not now";
     } else if(kind === "manual"){
       title.textContent = "Install for race day";
-      text.textContent = "To use Lap Times with no phone signal, install it now and then open from your Home screen. Use your browser menu to install the app, then open it from the Home screen.";
-      add.textContent = "Install";
-      el.classList.remove("can-install");
-    } else if(kind === "compact" || kind === "compact-ios" || kind === "compact-waiting"){
-      $("installChip").classList.add("show");
-    } else {
+      text.textContent = desktop
+        ? "Open the browser menu and choose Install, Install app, or Add to Home Screen. Then open Lap Times. This tab stays in the browser."
+        : "Open the browser menu and choose Install, Install app, or Add to Home Screen. Then open the Lap Times icon.";
+      if(dismiss) dismiss.textContent = "Not now";
+    } else if(kind === "unavailable"){
+      if(isIosDevice()){
+        title.textContent = "Open in Safari";
+        text.textContent = "This browser can't install Lap Times. Open this page in Safari, tap Share, then Add to Home Screen, and open the Lap Times icon.";
+      } else {
+        title.textContent = "Open in Chrome";
+        text.textContent = "This browser can't install Lap Times. Open this page in Chrome, then install it and open the Lap Times icon.";
+      }
+      if(dismiss) dismiss.textContent = "Not now";
+    } else if(kind === "prompt"){
       title.textContent = "Install for race day";
-      text.textContent = "To use Lap Times with no phone signal, install it now and then open from your Home screen.";
+      text.textContent = desktop
+        ? "Install Lap Times, then open the installed app. This tab stays in the browser."
+        : "To use Lap Times with no phone signal, install it now and then open the Lap Times icon.";
       add.textContent = "Install";
-      el.classList.add("can-install");
+      if(dismiss) dismiss.textContent = "Not now";
     }
 
-    if(!compact) el.classList.add("show");
     applyInstallLock();
   }
 
@@ -1617,19 +1674,9 @@
     if($("splitsModal").classList.contains("show")) syncSplitsMore();
   });
 
-  $("installChip").addEventListener("click", async () => {
-    if(deferredInstall){
-      deferredInstall.prompt();
-      try{
-        const choice = await deferredInstall.userChoice;
-        deferredInstall = null;
-        if(choice && choice.outcome === "accepted") showInstallHint("compact-waiting");
-      }catch{
-        deferredInstall = null;
-      }
-      return;
-    }
-    showInstallHint(isIosDevice() ? "ios" : "prompt");
+  $("installChip").addEventListener("click", () => {
+    if(installFinished || !canShowInstallUi()) return;
+    showInstallHint(installKind(), { fromUser: true });
   });
 
   function initInstallHint(){
@@ -1637,45 +1684,52 @@
     if(!el || !canShowInstallUi()) return;
 
     $("installHintDismiss").addEventListener("click", () => {
-      localStorage.setItem(INSTALL_HINT_KEY, "1");
+      if(el.dataset.kind !== "waiting") localStorage.setItem(INSTALL_HINT_KEY, "1");
       el.classList.remove("show", "can-install");
       el.classList.add("compact");
-      $("installChip").classList.add("show");
       applyInstallLock();
     });
 
     $("installHintAdd").addEventListener("click", async () => {
-      if(!deferredInstall){
-        if(isIosDevice()) return;
-        return;
-      }
-      deferredInstall.prompt();
+      const promptEvent = deferredInstall;
+      if(!promptEvent) return;
+      const add = $("installHintAdd");
+      add.disabled = true;
       try{
-        const choice = await deferredInstall.userChoice;
+        promptEvent.prompt();
         deferredInstall = null;
-        if(choice && choice.outcome === "accepted") showInstallHint("waiting");
+        el.classList.remove("can-install");
+        const choice = await promptEvent.userChoice;
+        if(choice && choice.outcome === "accepted") showInstallHint("waiting", { fromUser: true });
+        else showInstallHint("compact");
       }catch{
         deferredInstall = null;
+        el.classList.remove("can-install");
+        showInstallHint("compact");
+      }finally{
+        add.disabled = false;
       }
     });
 
     window.addEventListener("appinstalled", () => {
       deferredInstall = null;
-      showInstallHint(el.classList.contains("compact") || blockDismissed() ? "compact-waiting" : "waiting");
+      installFinished = true;
+      showInstallHint("waiting", { fromUser: true });
     });
 
-    if(compactDismissedThisVisit()) return;
-    if(blockDismissed()) showInstallHint("compact");
-    else if(deferredInstall) showInstallHint("prompt");
-    else if(isIosDevice()) showInstallHint("ios");
-    else showInstallHint("manual");
+    if(isDesktop() || blockDismissed()) showInstallHint("compact");
+    else showInstallHint(installKind());
   }
 
   window.addEventListener("beforeinstallprompt", e => {
     e.preventDefault();
+    if(installFinished || !canShowInstallUi()) return;
     deferredInstall = e;
-    if(!blockDismissed()) showInstallHint("prompt");
-    else $("installChip").classList.add("show");
+    const el = $("installHint");
+    const panelOpen = Boolean(el && el.classList.contains("show") && !el.classList.contains("compact"));
+    if(panelOpen) showInstallHint("prompt", { fromUser: true });
+    else if(isDesktop() || blockDismissed()) showInstallHint("compact");
+    else showInstallHint("prompt");
   });
 
   document.addEventListener("visibilitychange", () => {
