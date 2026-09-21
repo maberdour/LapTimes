@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lap Times">
-<meta name="laptap-coach-version" content="laptap-coach-v76">
+<meta name="laptap-coach-version" content="laptap-coach-v78">
 <title>Lap Times</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=74">
@@ -858,6 +858,7 @@
   <div class="field">
     <label for="coursePreset">Distance</label>
     <select id="coursePreset">
+      <option value="one-lap">1 lap</option>
       <option value="six-laps">6 laps</option>
       <option value="twelve-laps">12 laps</option>
       <option value="eighteen-laps">18 laps</option>
@@ -867,11 +868,11 @@
   </div>
   <div class="custom-fields hidden" id="customFields">
     <div class="field">
-      <label for="openingLaps">Opening segment (laps)</label>
+      <label for="openingLaps">Opening Segment (Partial Lap, Optional)</label>
       <input id="openingLaps" type="text" inputmode="decimal" value="0">
     </div>
     <div class="field">
-      <label for="fullLaps">Full laps after opening</label>
+      <label for="fullLaps">Full laps after opening segment</label>
       <input id="fullLaps" type="text" inputmode="numeric" value="6">
     </div>
   </div>
@@ -908,7 +909,7 @@
   <div id="resultsBody"></div>
   <div class="results-actions">
     <div class="results-export">
-      <p class="results-export-note">The file includes all of the lap splits.</p>
+      <p class="results-export-note" id="resultsExportNote">The file includes all of the lap splits.</p>
       <div class="results-share-row" id="resultsShareRow">
         <button class="small confirm-export" id="exportShareBtn" type="button">Share</button>
         <button class="small" id="exportDownloadBtn" type="button">Download</button>

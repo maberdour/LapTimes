@@ -1,0 +1,12 @@
+---
+description: Do not verify in the browser unless the user asks
+alwaysApply: true
+---
+
+# Browser verification
+
+- Do not open the browser, start a local server, or click through the UI to verify changes unless the user explicitly asks.
+- After UI or logic changes, confirm the result from the edited source and stop.
+- Do not treat browser tools, screenshots, or a full race walkthrough as required sign-off.
+- If a check is needed without an explicit browser request, use a fast source check (read, grep). Do not spin up the app.
+- Only use the browser when the user says to (for example “check in the browser” or “test it”).

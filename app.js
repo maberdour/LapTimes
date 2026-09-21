@@ -25,6 +25,7 @@
   ];
 
   const PRESETS = {
+    "one-lap": { id: "one-lap", name: "1 lap", openingLaps: 0, fullLaps: 1 },
     "six-laps": { id: "six-laps", name: "6 laps", openingLaps: 0, fullLaps: 6 },
     "twelve-laps": { id: "twelve-laps", name: "12 laps", openingLaps: 0, fullLaps: 12 },
     "eighteen-laps": { id: "eighteen-laps", name: "18 laps", openingLaps: 0, fullLaps: 18 },
@@ -95,6 +96,10 @@
 
   function neededCrossings(course){
     return (course.openingLaps > 0 ? 1 : 0) + course.fullLaps;
+  }
+
+  function isOneLapCourse(course = session.course){
+    return neededCrossings(course) === 1;
   }
 
   function emptyTiming(){
@@ -235,7 +240,7 @@
     const completedFull = opening ? Math.max(0, crossings.length - 1) : crossings.length;
     const remaining = full - completedFull;
     const current = Math.min(full, completedFull + 1);
-    if(remaining <= 1){
+    if(remaining <= 1 && !isOneLapCourse()){
       return pack({ status: "final", label: "FINAL LAP", remaining: 1, elapsed }, current);
     }
     return pack({ status: "racing", label: `${remaining} TO GO`, remaining, elapsed }, current);
@@ -252,6 +257,7 @@
       return `<div class="card-caption">${view.openingLabel}</div><div class="card-next">${view.nextLabel}</div>`;
     }
     if(view.status === "finished"){
+      if(isOneLapCourse()) return `<div class="card-caption">FINISHED</div>`;
       return `<div class="card-caption">FINISHED</div><div class="card-hint">Tap for Lap Times</div>`;
     }
     return `<div class="card-caption">START</div>`;
@@ -454,6 +460,7 @@
   }
 
   function enterFinalLap(riderId){
+    if(isOneLapCourse()) return;
     finalFlashAt[riderId] = Date.now();
     clearTimeout(finalFlashTimers[riderId]);
     finalFlashTimers[riderId] = setTimeout(() => {
@@ -844,7 +851,7 @@
         btn.style.color = color.fg;
         btn.style.borderColor = border;
       }
-      const splitsHint = view.status === "finished" ? ", tap for lap times" : "";
+      const splitsHint = view.status === "finished" && !isOneLapCourse() ? ", tap for lap times" : "";
       const ariaParts = [rider.name, rider.identifier, view.label, view.progress, formatTime(view.elapsed)].filter(Boolean);
       btn.setAttribute("aria-label", `${ariaParts.join(", ")}${splitsHint}`);
       btn.innerHTML = `
@@ -901,7 +908,7 @@
     const rider = session.riders.find(r => r.id === riderId);
     if(!rider) return;
     if(session.finishedAt[riderId]){
-      openSplitsModal(rider);
+      if(!isOneLapCourse()) openSplitsModal(rider);
       return;
     }
     const now = Date.now();
@@ -996,6 +1003,12 @@
         <tbody>${rows}</tbody>
       </table>
     `;
+    const exportNote = $("resultsExportNote");
+    if(exportNote){
+      exportNote.textContent = isOneLapCourse()
+        ? "The file includes rider name, course and total."
+        : "The file includes all of the lap splits.";
+    }
     const canShare = typeof navigator.share === "function";
     $("exportShareBtn").hidden = !canShare;
     $("resultsShareRow").classList.toggle("download-only", !canShare);
@@ -1101,6 +1114,20 @@
   }
 
   function exportRows(){
+    const rows = [];
+    if(isOneLapCourse()){
+      rows.push(["Rider", "Course", "Total"]);
+      session.riders.forEach(rider => {
+        const started = session.startedAt[rider.id];
+        const finished = session.finishedAt[rider.id];
+        rows.push([
+          rider.name,
+          session.course.name,
+          finished && started ? formatTime(finished - started) : ""
+        ]);
+      });
+      return rows;
+    }
     const opening = session.course.openingLaps > 0;
     const splitCount = Math.max(
       neededCrossings(session.course),
@@ -1110,8 +1137,7 @@
       if(opening && i === 0) return "Opening";
       return `Lap ${opening ? i : i + 1}`;
     });
-    const header = ["Rider", "Course", "Total", "Avg lap", "Fastest lap", "Slowest lap", ...lapHeaders];
-    const rows = [header];
+    rows.push(["Rider", "Course", "Total", "Avg lap", "Fastest lap", "Slowest lap", ...lapHeaders]);
     session.riders.forEach(rider => {
       const started = session.startedAt[rider.id];
       const finished = session.finishedAt[rider.id];
@@ -1428,12 +1454,14 @@
   }
 
   function resultsShareText(){
+    const oneLap = isOneLapCourse();
     const lines = session.riders.map(rider => {
       const view = riderView(rider, Date.now());
       const stats = statsFor(rider);
       const total = view.status === "finished" ? formatTime(view.elapsed) : "—";
-      const avg = stats ? formatTime(stats.avg) : "—";
       const label = rider.identifier ? `${rider.name} · ${rider.identifier}` : rider.name;
+      if(oneLap) return `${label}: ${total}`;
+      const avg = stats ? formatTime(stats.avg) : "—";
       return `${label}: ${total}  avg ${avg}`;
     });
     return [`Lap Times · ${session.course.name}`, ...lines].join("\n");

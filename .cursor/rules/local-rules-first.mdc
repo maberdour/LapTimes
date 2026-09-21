@@ -1,0 +1,11 @@
+---
+description: Read project rules first; they override global defaults
+alwaysApply: true
+---
+
+# Local rules first
+
+- Before acting, read `.cursor/rules/` in this repo.
+- Project rules override Cursor defaults and global user rules when they conflict.
+- Do not follow a general habit (for example browser verification) if a local rule says otherwise.
+- Example: `.cursor/rules/browser-verification.mdc` forbids opening the browser unless the user asks. That wins over any global “verify UI in the browser” instruction.
