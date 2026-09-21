@@ -493,6 +493,10 @@
       || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   }
 
+  function isAndroidDevice(){
+    return /Android/i.test(navigator.userAgent);
+  }
+
   function isStandalone(){
     return window.navigator.standalone === true
       || window.matchMedia("(display-mode: standalone)").matches;
@@ -1354,22 +1358,25 @@
     return canvas;
   }
 
-  function canvasPngBlob(canvas){
-    return new Promise(resolve => {
-      canvas.toBlob(blob => resolve(blob), "image/png");
-    });
+  function dataUrlToFile(dataUrl, name, type){
+    const binary = atob(dataUrl.split(",")[1] || "");
+    const bytes = new Uint8Array(binary.length);
+    for(let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+    return new File([bytes], name, { type });
   }
 
-  async function shareFiles(files, force){
+  function canSharePayload(payload){
     if(!navigator.share) return false;
-    const payload = { files, title: "Lap Times" };
-    if(!force){
-      try{
-        if(navigator.canShare && !navigator.canShare(payload)) return false;
-      }catch(err){
-        return false;
-      }
+    if(!navigator.canShare) return true;
+    try{
+      return navigator.canShare(payload);
+    }catch(err){
+      return false;
     }
+  }
+
+  async function sharePayload(payload){
+    if(!navigator.share || !payload) return false;
     try{
       await navigator.share(payload);
       return true;
@@ -1377,10 +1384,6 @@
       if(err && err.name === "AbortError") return true;
       return false;
     }
-  }
-
-  async function shareFile(file){
-    return shareFiles([file]);
   }
 
   function downloadBlob(blob, name){
@@ -1392,13 +1395,6 @@
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
-
-  async function shareOrDownload(blob, name, types){
-    for(const type of types){
-      if(await shareFile(new File([blob], name, { type }))) return;
-    }
-    downloadBlob(blob, name);
   }
 
   function csvEscape(value){
@@ -1443,10 +1439,20 @@
     const label = btn.textContent;
     btn.textContent = "Sharing…";
     try{
-      const blob = await canvasPngBlob(drawSplitsCanvas(rider));
-      if(!blob) return;
       const name = `laptap-coach-${shareSlug(rider.name)}-${fileStamp()}.png`;
-      await shareOrDownload(blob, name, ["image/png"]);
+      const file = dataUrlToFile(drawSplitsCanvas(rider).toDataURL("image/png"), name, "image/png");
+      const title = "Lap Times";
+      const text = rider.identifier
+        ? `${rider.name} · ${rider.identifier}`
+        : rider.name;
+      const payloads = [
+        { files: [file], title, text },
+        { files: [file], title },
+        { title, text }
+      ];
+      const payload = payloads.find(canSharePayload);
+      if(payload && await sharePayload(payload)) return;
+      downloadBlob(file, name);
     }finally{
       btn.disabled = false;
       btn.textContent = label;
@@ -1479,19 +1485,15 @@
     btn.textContent = "Sharing…";
     try{
       const xlsx = xlsxExport();
-      const candidates = excelShareCandidates(xlsx);
-      for(const files of candidates){
-        if(await shareFiles(files)) return;
-      }
-      for(const files of candidates){
-        if(await shareFiles(files, true)) return;
-      }
-      try{
-        await navigator.share({ title: "Lap Times", text: resultsShareText() });
-        return;
-      }catch(err){
-        if(err && err.name === "AbortError") return;
-      }
+      const textPayload = { title: "Lap Times", text: resultsShareText() };
+      const payloads = isAndroidDevice()
+        ? [textPayload]
+        : [
+            ...excelShareCandidates(xlsx).map(files => ({ files, title: "Lap Times", text: textPayload.text })),
+            textPayload
+          ];
+      const payload = payloads.find(canSharePayload) || textPayload;
+      if(await sharePayload(payload)) return;
       downloadBlob(xlsx.blob, xlsx.name);
     }finally{
       btn.disabled = false;
