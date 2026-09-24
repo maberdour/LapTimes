@@ -4,7 +4,7 @@
   const TAP_COOLDOWN_MS = 500;
   const CLOCK_MS = 10;
   const FLASH_MS = 600;
-  const FINAL_FLASH_MS = 10000;
+  const FINAL_FLASH_MS = 6000;
   const FINAL_FLASH_PERIOD_MS = 2000;
   const FINAL_BELL_S = 2;
 
@@ -124,6 +124,7 @@
       v: 1,
       course: defaultCourse(),
       riders: [blankRider(0)],
+      finalLapBell: true,
       ...emptyTiming()
     };
   }
@@ -172,7 +173,8 @@
       crossings[r.id] = list;
     });
     const history = Array.isArray(raw.history) ? raw.history.filter(item => item && ids.has(item.riderId)) : [];
-    return { v: 1, course, riders, startedAt, crossings, finishedAt, history };
+    const finalLapBell = raw.finalLapBell !== false;
+    return { v: 1, course, riders, finalLapBell, startedAt, crossings, finishedAt, history };
   }
 
   function loadSession(){
@@ -437,6 +439,7 @@
   }
 
   function playFinalLapBell(){
+    if(session.finalLapBell === false) return;
     try{
       const src = $("finalLapBell");
       const bell = new Audio(src ? src.currentSrc || src.src : "./bell.wav");
@@ -829,6 +832,8 @@
     $("openingLaps").value = String(draft.course.openingLaps);
     $("fullLaps").value = String(draft.course.fullLaps);
     $("customFields").classList.toggle("hidden", preset !== "custom");
+    $("finalLapBellToggle").checked = session.finalLapBell !== false;
+    syncFinalLapBellField();
     $("setupCancelBtn").disabled = !sessionReady();
     setSetupError("");
     expandedRiderIndex = -1;
@@ -855,6 +860,11 @@
       || session.course.fullLaps !== next.fullLaps;
   }
 
+  function syncFinalLapBellField(){
+    const oneLap = isOneLapCourse(readCourseFromSetup());
+    $("finalLapBellField").classList.toggle("hidden", oneLap);
+  }
+
   function applySetup(){
     const err = validateDraft();
     if(err){
@@ -862,10 +872,12 @@
       return false;
     }
     const resetTiming = courseLapsChanged(draft.course);
+    const oneLap = isOneLapCourse(draft.course);
     session = normalizeSession({
       ...session,
       course: clone(draft.course),
       riders: clone(draft.riders),
+      finalLapBell: oneLap ? session.finalLapBell !== false : $("finalLapBellToggle").checked,
       ...(resetTiming ? emptyTiming() : {})
     });
     if(resetTiming){
@@ -1606,6 +1618,11 @@
       $("openingLaps").value = String(course.openingLaps);
       $("fullLaps").value = String(course.fullLaps);
     }
+    syncFinalLapBellField();
+  });
+
+  ["openingLaps", "fullLaps"].forEach(id => {
+    $(id).addEventListener("input", syncFinalLapBellField);
   });
 
   $("addRiderBtn").addEventListener("click", () => {
