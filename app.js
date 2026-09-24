@@ -923,8 +923,7 @@
     syncFinalLapBellField();
     setSetupError("");
     clearSetupFieldErrors();
-    const incomplete = firstIncompleteRiderIndex();
-    expandedRiderIndex = incomplete >= 0 ? incomplete : 0;
+    expandedRiderIndex = -1;
     renderRiderEditors();
   }
 
