@@ -762,12 +762,14 @@
     const named = draft.riders.filter(r => String(r.name || "").trim()).length;
     const total = draft.riders.length;
     const canLeave = sessionReady();
+    const firstVisit = !canLeave;
+    const actionLabel = firstVisit ? "Start timing" : "Save & continue";
 
     if(incomplete < 0){
       ready.classList.add("is-ready");
       ready.textContent = total === 1
-        ? "Ready — press Start timing when you’re set."
-        : `Ready — ${total} riders named. Press Start timing when you’re set.`;
+        ? `Ready — press ${actionLabel} when you’re set.`
+        : `Ready — ${total} riders named. Press ${actionLabel} when you’re set.`;
     }else if(named === 0){
       ready.classList.remove("is-ready");
       ready.textContent = total === 1
@@ -778,8 +780,7 @@
       ready.textContent = `Almost there — Rider ${incomplete + 1} still needs a name.`;
     }
 
-    const firstVisit = !canLeave;
-    saveBtn.textContent = firstVisit ? "Start timing" : "Save & continue";
+    saveBtn.textContent = actionLabel;
     cancelBtn.textContent = "Back to timing";
     cancelBtn.disabled = !canLeave;
     cancelBtn.hidden = firstVisit;
