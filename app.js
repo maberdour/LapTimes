@@ -793,8 +793,34 @@
     el.scrollIntoView({ behavior: "smooth", block: "center" });
   }
 
-  function revealRiderName(index){
-    revealSetupField(riderEditors.querySelector(`#riderBody${index} [data-field="name"]`));
+  function revealRiderName(index, options){
+    const input = riderEditors.querySelector(`#riderBody${index} [data-field="name"]`);
+    if(!input) return;
+    const focus = Boolean(options && options.focus);
+    input.scrollIntoView({ behavior: focus ? "auto" : "smooth", block: "center" });
+    if(focus) input.focus();
+  }
+
+  function enableTextKeyboard(input){
+    if(!input || input.dataset.keyboardBound) return;
+    const type = (input.getAttribute("type") || "text").toLowerCase();
+    if(type === "checkbox" || type === "radio" || type === "button" || type === "submit" || type === "range" || type === "file") return;
+    input.dataset.keyboardBound = "1";
+    let startY = 0;
+    input.addEventListener("touchstart", e => {
+      startY = e.changedTouches[0] ? e.changedTouches[0].clientY : 0;
+    }, { passive: true });
+    // iPad often never sends the click that would focus a field. Focus on a still tap.
+    input.addEventListener("touchend", e => {
+      const endY = e.changedTouches[0] ? e.changedTouches[0].clientY : startY;
+      if(Math.abs(endY - startY) > 12) return;
+      if(document.activeElement === input) return;
+      input.focus();
+    });
+  }
+
+  function enableTextKeyboards(root){
+    (root || document).querySelectorAll("input, textarea").forEach(enableTextKeyboard);
   }
 
   function presetIdFromCourse(course){
@@ -849,12 +875,12 @@
         <div class="rider-body" id="riderBody${index}">
           <div class="field">
             <label for="riderName${index}">Name <span class="optional">(required)</span></label>
-            <input id="riderName${index}" data-field="name" type="text" maxlength="24" autocomplete="off" placeholder="e.g. Sam" value="${escapeHtml(rider.name)}">
+            <input id="riderName${index}" data-field="name" type="text" inputmode="text" maxlength="24" autocomplete="off" autocapitalize="words" placeholder="e.g. Sam" value="${escapeHtml(rider.name)}">
             <p class="field-hint">Shown big on their timing card so you can tap the right rider.</p>
           </div>
           <div class="field">
             <label for="riderId${index}">What they look like <span class="optional">(optional)</span></label>
-            <input id="riderId${index}" data-field="identifier" type="text" maxlength="32" autocomplete="off" placeholder="e.g. white helmet, red jersey" value="${escapeHtml(rider.identifier)}">
+            <input id="riderId${index}" data-field="identifier" type="text" inputmode="text" maxlength="32" autocomplete="off" autocapitalize="sentences" placeholder="e.g. white helmet, red jersey" value="${escapeHtml(rider.identifier)}">
             <p class="field-hint">A quick note so you can tell riders apart on track. If you use one, each rider needs a different note.</p>
           </div>
           <div class="field">
@@ -879,8 +905,10 @@
         colorsEl.appendChild(btn);
       });
       wrap.querySelector(".rider-toggle").addEventListener("click", () => {
-        expandedRiderIndex = expandedRiderIndex === index ? -1 : index;
+        const opening = expandedRiderIndex !== index;
+        expandedRiderIndex = opening ? index : -1;
         renderRiderEditors();
+        if(opening) revealRiderName(index, { focus: true });
       });
       wrap.querySelector('[data-field="name"]').addEventListener("input", e => {
         rider.name = e.target.value;
@@ -907,6 +935,7 @@
     const atMax = draft.riders.length >= 4;
     $("addRiderBtn").classList.toggle("hidden", atMax);
     $("riderLimitNote").classList.toggle("hidden", !atMax);
+    enableTextKeyboards(riderEditors);
     updateSetupReady();
   }
 
@@ -944,7 +973,7 @@
       const nameInput = riderEditors.querySelector(`#riderName${missingName}`);
       if(nameInput){
         nameInput.closest(".field")?.classList.add("has-error");
-        requestAnimationFrame(() => revealRiderName(missingName));
+        revealRiderName(missingName, { focus: true });
       }
       return `Rider ${missingName + 1} needs a name before you can start.`;
     }
@@ -964,7 +993,8 @@
         const idInput = riderEditors.querySelector(`#riderId${dupIndex}`);
         if(idInput){
           idInput.closest(".field")?.classList.add("has-error");
-          requestAnimationFrame(() => revealSetupField(idInput));
+          idInput.scrollIntoView({ block: "center" });
+          idInput.focus();
         }
       }
       return "Two riders share the same “what they look like” note. Change one so you can tell them apart.";
@@ -1777,7 +1807,7 @@
     draft.riders.push(blankRider(draft.riders.length));
     expandedRiderIndex = draft.riders.length - 1;
     renderRiderEditors();
-    requestAnimationFrame(() => revealRiderName(expandedRiderIndex));
+    revealRiderName(expandedRiderIndex, { focus: true });
   });
 
   $("setupSaveBtn").addEventListener("click", () => {
@@ -2014,6 +2044,7 @@
     setTimeout(checkForUpdate, 1500);
   }
 
+  enableTextKeyboards(setupScreen);
   initServiceWorker();
   resizeConfetti();
 

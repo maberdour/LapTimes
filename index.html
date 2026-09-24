@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lap Times">
-<meta name="laptap-coach-version" content="laptap-coach-v93">
+<meta name="laptap-coach-version" content="laptap-coach-v94">
 <title>Lap Times</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=74">
@@ -27,7 +27,7 @@
   }
   html, body{
     margin:0;
-    height:100%;
+    min-height:100%;
     background:var(--bg);
     color:var(--text);
     font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
@@ -49,8 +49,8 @@
     flex-direction:column;
     min-height:100dvh;
     padding:14px 14px max(18px,env(safe-area-inset-bottom));
-    overflow:auto;
-    -webkit-overflow-scrolling:touch;
+    /* A nested momentum scroller stops iPad from opening the keyboard. */
+    overflow:visible;
   }
   .setup-hero{
     margin-bottom:18px;
@@ -139,6 +139,10 @@
     font-size:22px;
     font-weight:800;
     padding:10px 12px;
+    /* iPad drops the keyboard if a text field cannot be selected. */
+    -webkit-user-select:text;
+    user-select:text;
+    touch-action:auto;
   }
   .field select,
   select{
