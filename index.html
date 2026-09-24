@@ -93,8 +93,10 @@
   }
   .toggle-field.hidden{display:none}
   .toggle-field label{
+    position:relative;
     display:flex;
     align-items:center;
+    justify-content:space-between;
     gap:14px;
     min-height:56px;
     padding:10px 12px;
@@ -107,10 +109,44 @@
     cursor:pointer;
   }
   .toggle-field input{
+    position:absolute;
+    opacity:0;
+    width:1px;
+    height:1px;
+    margin:0;
+    overflow:hidden;
+    clip:rect(0,0,0,0);
+    pointer-events:none;
+  }
+  .toggle-box{
     width:28px;
     height:28px;
     flex-shrink:0;
-    accent-color:#ffffff;
+    border:3px solid #ffffff;
+    border-radius:6px;
+    background:#000000;
+    box-sizing:border-box;
+    display:grid;
+    place-items:center;
+  }
+  .toggle-box::after{
+    content:"";
+    width:10px;
+    height:16px;
+    border-right:3px solid #000000;
+    border-bottom:3px solid #000000;
+    transform:rotate(45deg) translate(-1px,-1px);
+    opacity:0;
+  }
+  .toggle-field input:checked + .toggle-box{
+    background:#ffffff;
+  }
+  .toggle-field input:checked + .toggle-box::after{
+    opacity:1;
+  }
+  .toggle-field input:focus-visible + .toggle-box{
+    outline:3px solid #ffffff;
+    outline-offset:3px;
   }
   .rider-editor{
     border:3px solid #ffffff;
@@ -943,8 +979,9 @@
   </div>
   <div class="toggle-field" id="finalLapBellField">
     <label for="finalLapBellToggle">
+      <span>Last lap bell</span>
       <input id="finalLapBellToggle" type="checkbox" checked>
-      Last lap bell
+      <span class="toggle-box" aria-hidden="true"></span>
     </label>
   </div>
   <div id="riderEditors"></div>
