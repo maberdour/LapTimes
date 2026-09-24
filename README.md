@@ -2,7 +2,7 @@
 
 A phone-first timing app for coaches. Time up to four riders at once, on the track, with large tap targets and no network required after install.
 
-Live site: [coach.letsrace.cc](https://coach.letsrace.cc/)
+Live site: [laptimes.letsrace.cc](https://laptimes.letsrace.cc/)
 
 ## What it does
 
@@ -34,4 +34,4 @@ Changing rider names or colours keeps recorded laps. Changing the number of laps
 
 ## Stack
 - Vanilla HTML, CSS, and JavaScript. No build step and no dependencies. 
-- GitHub Pages (or equivalent) hosts the site via the `CNAME` for `coach.letsrace.cc`.
+- GitHub Pages (or equivalent) hosts the site via the `CNAME` for `laptimes.letsrace.cc`.
