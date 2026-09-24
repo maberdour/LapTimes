@@ -493,6 +493,15 @@
       || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
   }
 
+  function isIpad(){
+    return /iPad/.test(navigator.userAgent)
+      || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  }
+
+  function iosSharePointsTop(){
+    return isIpad() || !isIosSafari();
+  }
+
   function isIosSafari(){
     if(!isIosDevice()) return false;
     const ua = navigator.userAgent;
@@ -579,6 +588,7 @@
     const title = $("installHintTitle");
     const text = $("installHintText");
     const add = $("installHintAdd");
+    const addLabel = $("installHintAddLabel");
     const dismiss = $("installHintDismiss");
     if(!el || !title || !text || !add || !canShowInstallUi()) return;
     if(installFinished && kind !== "waiting"){
@@ -592,10 +602,14 @@
 
     const compact = kind === "compact";
     const desktop = isDesktop();
+    const canPrompt = kind === "prompt" && Boolean(deferredInstall);
+    const hasAction = !compact && (canPrompt || kind === "ios" || kind === "mac");
     el.dataset.kind = kind;
     el.classList.toggle("compact", compact);
     el.classList.toggle("show", !compact);
-    el.classList.toggle("can-install", kind === "prompt" && Boolean(deferredInstall));
+    el.classList.toggle("has-action", hasAction);
+    el.classList.toggle("can-share", kind === "ios" && hasAction);
+    el.classList.remove("point-share", "point-share-top");
 
     if(kind === "waiting"){
       title.textContent = desktop ? "Open the installed app" : "Open it from your Home screen";
@@ -606,10 +620,12 @@
     } else if(kind === "ios"){
       title.textContent = "Install for race day";
       text.textContent = "To use Lap Times with no phone signal, tap Share, then Add to Home Screen, and open the Lap Times icon.";
+      if(addLabel) addLabel.textContent = "Share";
       if(dismiss) dismiss.textContent = "Not now";
     } else if(kind === "mac"){
       title.textContent = "Install for race day";
       text.textContent = "In Safari, choose File, then Add to Dock. Open Lap Times from the Dock. This tab stays in the browser.";
+      if(addLabel) addLabel.textContent = "Add to Dock";
       if(dismiss) dismiss.textContent = "Not now";
     } else if(kind === "manual"){
       title.textContent = "Install for race day";
@@ -631,7 +647,7 @@
       text.textContent = desktop
         ? "Install Lap Times, then open the installed app. This tab stays in the browser."
         : "To use Lap Times with no phone signal, install it now and then open the Lap Times icon.";
-      add.textContent = "Install";
+      if(addLabel) addLabel.textContent = "Install";
       if(dismiss) dismiss.textContent = "Not now";
     }
 
@@ -1685,29 +1701,49 @@
 
     $("installHintDismiss").addEventListener("click", () => {
       if(el.dataset.kind !== "waiting") localStorage.setItem(INSTALL_HINT_KEY, "1");
-      el.classList.remove("show", "can-install");
+      el.classList.remove("show", "has-action", "can-share", "point-share", "point-share-top");
       el.classList.add("compact");
       applyInstallLock();
     });
 
     $("installHintAdd").addEventListener("click", async () => {
       const promptEvent = deferredInstall;
-      if(!promptEvent) return;
-      const add = $("installHintAdd");
-      add.disabled = true;
-      try{
-        promptEvent.prompt();
-        deferredInstall = null;
-        el.classList.remove("can-install");
-        const choice = await promptEvent.userChoice;
-        if(choice && choice.outcome === "accepted") showInstallHint("waiting", { fromUser: true });
-        else showInstallHint("compact");
-      }catch{
-        deferredInstall = null;
-        el.classList.remove("can-install");
-        showInstallHint("compact");
-      }finally{
-        add.disabled = false;
+      if(promptEvent){
+        const add = $("installHintAdd");
+        add.disabled = true;
+        try{
+          promptEvent.prompt();
+          deferredInstall = null;
+          el.classList.remove("has-action");
+          const choice = await promptEvent.userChoice;
+          if(choice && choice.outcome === "accepted") showInstallHint("waiting", { fromUser: true });
+          else showInstallHint("compact");
+        }catch{
+          deferredInstall = null;
+          el.classList.remove("has-action");
+          showInstallHint("compact");
+        }finally{
+          add.disabled = false;
+        }
+        return;
+      }
+      if(el.dataset.kind === "ios"){
+        const text = $("installHintText");
+        const pointTop = iosSharePointsTop();
+        el.classList.add("point-share");
+        el.classList.toggle("point-share-top", pointTop);
+        if(text){
+          text.textContent = pointTop
+            ? "Tap Share at the top of the browser, then Add to Home Screen, and open the Lap Times icon."
+            : "Tap Share on Safari's bar at the bottom, then Add to Home Screen, and open the Lap Times icon.";
+        }
+        return;
+      }
+      if(el.dataset.kind === "mac"){
+        const text = $("installHintText");
+        if(text){
+          text.textContent = "Safari menu: File, then Add to Dock. Open Lap Times from the Dock. This tab stays in the browser.";
+        }
       }
     });
 

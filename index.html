@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lap Times">
-<meta name="laptap-coach-version" content="laptap-coach-v82">
+<meta name="laptap-coach-version" content="laptap-coach-v83">
 <title>Lap Times</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=74">
@@ -609,8 +609,49 @@
     color:#ffffff;
     font-size:clamp(22px,5.8vw,28px);
     font-weight:1000;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
   }
-  .install-hint.can-install .install-hint-add{display:block}
+  .install-hint.has-action .install-hint-add{display:flex}
+  .install-hint-share-icon{
+    display:none;
+    width:1.15em;
+    height:1.15em;
+    flex:0 0 auto;
+  }
+  .install-hint.can-share .install-hint-share-icon{display:block}
+  .install-hint-pointer{
+    display:none;
+    position:absolute;
+    left:50%;
+    bottom:max(8px,env(safe-area-inset-bottom));
+    width:68px;
+    height:68px;
+    color:#ffffff;
+    pointer-events:none;
+    transform:translateX(-50%);
+    animation:install-point 1s ease-in-out infinite;
+  }
+  .install-hint.point-share .install-hint-pointer{display:block}
+  .install-hint.point-share .install-hint-panel{margin-bottom:72px}
+  .install-hint.point-share-top .install-hint-pointer{
+    bottom:auto;
+    top:max(8px,env(safe-area-inset-top));
+    animation-name:install-point-top;
+  }
+  .install-hint.point-share-top .install-hint-panel{
+    margin-bottom:0;
+    margin-top:72px;
+  }
+  @keyframes install-point{
+    0%,100%{transform:translate(-50%, 0)}
+    50%{transform:translate(-50%, 10px)}
+  }
+  @keyframes install-point-top{
+    0%,100%{transform:translate(-50%, 0) rotate(180deg)}
+    50%{transform:translate(-50%, 10px) rotate(180deg)}
+  }
   .install-hint-dismiss{
     width:100%;
     min-height:54px;
@@ -928,9 +969,18 @@
       <strong id="installHintTitle">Install for race day</strong>
       <span id="installHintText">To use Lap Times with no phone signal, install it now and then open from your Home screen.</span>
     </div>
-    <button class="install-hint-add" id="installHintAdd" type="button">Install</button>
+    <button class="install-hint-add" id="installHintAdd" type="button">
+      <svg class="install-hint-share-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path stroke="currentColor" stroke-width="2.6" stroke-linecap="square" d="M12 4v11M8 8l4-4 4 4"/>
+        <path stroke="currentColor" stroke-width="2.6" stroke-linecap="square" d="M5 12v8h14v-8"/>
+      </svg>
+      <span id="installHintAddLabel">Install</span>
+    </button>
     <button class="install-hint-dismiss" id="installHintDismiss" type="button">Not now</button>
   </div>
+  <svg class="install-hint-pointer" id="installHintPointer" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path stroke="currentColor" stroke-width="3" stroke-linecap="square" d="M12 4v14M6 14l6 6 6-6"/>
+  </svg>
 </div>
 
 <div class="modal" id="resetModal" role="dialog" aria-modal="true" aria-labelledby="resetModalTitle">
