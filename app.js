@@ -684,6 +684,11 @@
     if(index < 0 || index >= draft.riders.length) return;
     draft.riders.splice(index, 1);
     if(index < expandedRiderIndex) expandedRiderIndex -= 1;
+    else if(index === expandedRiderIndex){
+      const nextIncomplete = firstIncompleteRiderIndex();
+      expandedRiderIndex = nextIncomplete >= 0 ? nextIncomplete : Math.min(index, draft.riders.length - 1);
+    }
+    setSetupError("");
     renderRiderEditors();
   }
 
@@ -729,6 +734,66 @@
     el.classList.toggle("show", Boolean(msg));
   }
 
+  function clearSetupFieldErrors(){
+    setupScreen.querySelectorAll(".field.has-error").forEach(el => el.classList.remove("has-error"));
+  }
+
+  function markSetupFieldError(id){
+    const input = $(id);
+    if(!input) return;
+    const field = input.closest(".field");
+    if(field) field.classList.add("has-error");
+  }
+
+  function firstIncompleteRiderIndex(){
+    if(!draft) return -1;
+    return draft.riders.findIndex(r => !String(r.name || "").trim());
+  }
+
+  function updateSetupReady(){
+    const ready = $("setupReady");
+    const saveBtn = $("setupSaveBtn");
+    const cancelBtn = $("setupCancelBtn");
+    const actions = $("setupActions");
+    const note = $("setupNote");
+    if(!ready || !draft) return;
+
+    const incomplete = firstIncompleteRiderIndex();
+    const named = draft.riders.filter(r => String(r.name || "").trim()).length;
+    const total = draft.riders.length;
+    const canLeave = sessionReady();
+
+    if(incomplete < 0){
+      ready.classList.add("is-ready");
+      ready.textContent = total === 1
+        ? "Ready — press Start timing when you’re set."
+        : `Ready — ${total} riders named. Press Start timing when you’re set.`;
+    }else if(named === 0){
+      ready.classList.remove("is-ready");
+      ready.textContent = total === 1
+        ? "Next: open Rider 1 and type their name."
+        : `Next: type a name for Rider ${incomplete + 1} (and any others).`;
+    }else{
+      ready.classList.remove("is-ready");
+      ready.textContent = `Almost there — Rider ${incomplete + 1} still needs a name.`;
+    }
+
+    const firstVisit = !canLeave;
+    saveBtn.textContent = firstVisit ? "Start timing" : "Save & continue";
+    cancelBtn.textContent = "Back to timing";
+    cancelBtn.disabled = !canLeave;
+    cancelBtn.hidden = firstVisit;
+    actions.classList.toggle("single-action", firstVisit);
+    note.classList.toggle("hidden", !sessionUnderway());
+  }
+
+  function focusRiderName(index){
+    const input = riderEditors.querySelector(`#riderBody${index} [data-field="name"]`);
+    if(!input) return;
+    input.focus({ preventScroll: true });
+    input.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
   function presetIdFromCourse(course){
     if(PRESETS[course.id]) return course.id;
     return "custom";
@@ -748,42 +813,51 @@
     const name = String(rider?.name || "").trim();
     const identifier = String(rider?.identifier || "").trim();
     if(name && identifier) return `${name} · ${identifier}`;
-    return name || identifier;
+    if(name) return name;
+    if(identifier) return identifier;
+    return "Tap to add name";
   }
 
   function renderRiderEditors(){
     riderEditors.innerHTML = "";
+    if(!draft) return;
     if(expandedRiderIndex >= draft.riders.length) expandedRiderIndex = draft.riders.length - 1;
     draft.riders.forEach((rider, index) => {
       const expanded = index === expandedRiderIndex;
       const color = colorById(rider.color);
       const summary = riderSummary(rider);
+      const incomplete = !String(rider.name || "").trim();
       const wrap = document.createElement("div");
-      wrap.className = "rider-editor" + (expanded ? "" : " is-collapsed");
+      wrap.className = "rider-editor"
+        + (expanded ? "" : " is-collapsed")
+        + (incomplete ? " is-incomplete" : "");
       wrap.innerHTML = `
         <div class="rider-head">
           <button class="rider-toggle" type="button" aria-expanded="${expanded ? "true" : "false"}" aria-controls="riderBody${index}">
             <span class="rider-swatch" style="background:${color.bg}"></span>
             <span class="rider-toggle-copy">
               <strong>Rider ${index + 1}</strong>
-              ${summary ? `<span class="rider-summary">${escapeHtml(summary)}</span>` : ""}
+              <span class="rider-summary">${escapeHtml(summary)}</span>
             </span>
             <span class="rider-chevron" aria-hidden="true"></span>
           </button>
-          <button class="remove-rider" type="button" aria-label="Remove rider" ${draft.riders.length <= 1 ? "disabled" : ""}>✕</button>
+          <button class="remove-rider" type="button" aria-label="Remove rider ${index + 1}" ${draft.riders.length <= 1 ? "disabled" : ""}>✕</button>
         </div>
         <div class="rider-body" id="riderBody${index}">
           <div class="field">
-            <label>Name</label>
-            <input data-field="name" type="text" maxlength="24" autocomplete="off" value="${escapeHtml(rider.name)}">
+            <label for="riderName${index}">Name <span class="optional">(required)</span></label>
+            <input id="riderName${index}" data-field="name" type="text" maxlength="24" autocomplete="off" placeholder="e.g. Sam" value="${escapeHtml(rider.name)}">
+            <p class="field-hint">Shown big on their timing card so you can tap the right rider.</p>
           </div>
           <div class="field">
-            <label>Visual identifier <span class="optional">(optional)</span></label>
-            <input data-field="identifier" type="text" maxlength="32" autocomplete="off" placeholder="White helmet" value="${escapeHtml(rider.identifier)}">
+            <label for="riderId${index}">What they look like <span class="optional">(optional)</span></label>
+            <input id="riderId${index}" data-field="identifier" type="text" maxlength="32" autocomplete="off" placeholder="e.g. white helmet, red jersey" value="${escapeHtml(rider.identifier)}">
+            <p class="field-hint">A quick note so you can tell riders apart on track. If you use one, each rider needs a different note.</p>
           </div>
           <div class="field">
             <label>Card colour</label>
-            <div class="colors"></div>
+            <div class="colors" role="group" aria-label="Card colour for rider ${index + 1}"></div>
+            <p class="field-hint">Pick a colour that stands out outdoors. Tap one square.</p>
           </div>
         </div>
       `;
@@ -804,12 +878,25 @@
       wrap.querySelector(".rider-toggle").addEventListener("click", () => {
         expandedRiderIndex = expandedRiderIndex === index ? -1 : index;
         renderRiderEditors();
+        if(expandedRiderIndex === index){
+          requestAnimationFrame(() => focusRiderName(index));
+        }
       });
       wrap.querySelector('[data-field="name"]').addEventListener("input", e => {
         rider.name = e.target.value;
+        wrap.classList.toggle("is-incomplete", !String(rider.name || "").trim());
+        const summaryEl = wrap.querySelector(".rider-summary");
+        if(summaryEl) summaryEl.textContent = riderSummary(rider);
+        setSetupError("");
+        clearSetupFieldErrors();
+        updateSetupReady();
       });
       wrap.querySelector('[data-field="identifier"]').addEventListener("input", e => {
         rider.identifier = e.target.value;
+        const summaryEl = wrap.querySelector(".rider-summary");
+        if(summaryEl) summaryEl.textContent = riderSummary(rider);
+        setSetupError("");
+        clearSetupFieldErrors();
       });
       wrap.querySelector(".remove-rider").addEventListener("click", () => {
         if(draft.riders.length <= 1) return;
@@ -820,6 +907,7 @@
     const atMax = draft.riders.length >= 4;
     $("addRiderBtn").classList.toggle("hidden", atMax);
     $("riderLimitNote").classList.toggle("hidden", !atMax);
+    updateSetupReady();
   }
 
   function fillSetup(){
@@ -834,13 +922,15 @@
     $("customFields").classList.toggle("hidden", preset !== "custom");
     $("finalLapBellToggle").checked = session.finalLapBell !== false;
     syncFinalLapBellField();
-    $("setupCancelBtn").disabled = !sessionReady();
     setSetupError("");
-    expandedRiderIndex = -1;
+    clearSetupFieldErrors();
+    const incomplete = firstIncompleteRiderIndex();
+    expandedRiderIndex = incomplete >= 0 ? incomplete : 0;
     renderRiderEditors();
   }
 
   function validateDraft(){
+    clearSetupFieldErrors();
     draft.course = readCourseFromSetup();
     draft.riders = draft.riders.map((r, i) => normalizeRider({
       ...r,
@@ -848,10 +938,60 @@
       identifier: r.identifier
     }, i));
     if(!draft.riders.length) return "Add at least one rider.";
-    if(draft.riders.some(r => !r.name)) return "Each rider needs a name.";
+    const missingName = draft.riders.findIndex(r => !r.name);
+    if(missingName >= 0){
+      expandedRiderIndex = missingName;
+      renderRiderEditors();
+      const nameInput = riderEditors.querySelector(`#riderName${missingName}`);
+      if(nameInput){
+        nameInput.closest(".field")?.classList.add("has-error");
+        requestAnimationFrame(() => focusRiderName(missingName));
+      }
+      return `Rider ${missingName + 1} needs a name before you can start.`;
+    }
     const ids = draft.riders.map(r => r.identifier.toLowerCase()).filter(Boolean);
-    if(new Set(ids).size !== ids.length) return "Each rider needs a different visual identifier.";
-    if(draft.course.id === "custom" && draft.course.openingLaps < 0) return "Opening segment cannot be negative.";
+    if(new Set(ids).size !== ids.length){
+      const seen = new Set();
+      let dupIndex = -1;
+      draft.riders.forEach((r, i) => {
+        const id = r.identifier.toLowerCase();
+        if(!id) return;
+        if(seen.has(id) && dupIndex < 0) dupIndex = i;
+        seen.add(id);
+      });
+      if(dupIndex >= 0){
+        expandedRiderIndex = dupIndex;
+        renderRiderEditors();
+        const idInput = riderEditors.querySelector(`#riderId${dupIndex}`);
+        if(idInput){
+          idInput.closest(".field")?.classList.add("has-error");
+          requestAnimationFrame(() => {
+            idInput.focus({ preventScroll: true });
+            idInput.scrollIntoView({ behavior: "smooth", block: "center" });
+          });
+        }
+      }
+      return "Two riders share the same “what they look like” note. Change one so you can tell them apart.";
+    }
+    if(draft.course.id === "custom"){
+      const openingRaw = String($("openingLaps").value || "").trim();
+      const fullRaw = String($("fullLaps").value || "").trim();
+      if(openingRaw !== "" && Number.isNaN(Number(openingRaw))){
+        markSetupFieldError("openingLaps");
+        $("openingLaps").focus();
+        return "Part-lap at the start must be a number (or leave it as 0).";
+      }
+      if(draft.course.openingLaps < 0){
+        markSetupFieldError("openingLaps");
+        $("openingLaps").focus();
+        return "Part-lap at the start cannot be negative.";
+      }
+      if(fullRaw === "" || Number.isNaN(parseInt(fullRaw, 10)) || parseInt(fullRaw, 10) < 1){
+        markSetupFieldError("fullLaps");
+        $("fullLaps").focus();
+        return "Enter how many full laps after the opening (at least 1).";
+      }
+    }
     return "";
   }
 
@@ -869,6 +1009,7 @@
     const err = validateDraft();
     if(err){
       setSetupError(err);
+      $("setupError").scrollIntoView({ behavior: "smooth", block: "nearest" });
       return false;
     }
     const resetTiming = courseLapsChanged(draft.course);
@@ -895,6 +1036,10 @@
   function openSetup(){
     fillSetup();
     showScreen("setup");
+    requestAnimationFrame(() => {
+      setupScreen.scrollTop = 0;
+      window.scrollTo(0, 0);
+    });
   }
 
   function renderTiming(){
@@ -1618,11 +1763,17 @@
       $("openingLaps").value = String(course.openingLaps);
       $("fullLaps").value = String(course.fullLaps);
     }
+    setSetupError("");
+    clearSetupFieldErrors();
     syncFinalLapBellField();
   });
 
   ["openingLaps", "fullLaps"].forEach(id => {
-    $(id).addEventListener("input", syncFinalLapBellField);
+    $(id).addEventListener("input", () => {
+      setSetupError("");
+      clearSetupFieldErrors();
+      syncFinalLapBellField();
+    });
   });
 
   $("addRiderBtn").addEventListener("click", () => {
@@ -1630,12 +1781,14 @@
     draft.riders.push(blankRider(draft.riders.length));
     expandedRiderIndex = draft.riders.length - 1;
     renderRiderEditors();
+    requestAnimationFrame(() => focusRiderName(expandedRiderIndex));
   });
 
   $("setupSaveBtn").addEventListener("click", () => {
     const err = validateDraft();
     if(err){
       setSetupError(err);
+      $("setupError").scrollIntoView({ behavior: "smooth", block: "nearest" });
       return;
     }
     if(sessionUnderway() && courseLapsChanged(draft.course)){

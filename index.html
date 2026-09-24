@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lap Times">
-<meta name="laptap-coach-version" content="laptap-coach-v83">
+<meta name="laptap-coach-version" content="laptap-coach-v90">
 <title>Lap Times</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=74">
@@ -49,11 +49,65 @@
     flex-direction:column;
     min-height:100dvh;
     padding:14px 14px max(18px,env(safe-area-inset-bottom));
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
   }
-  .setup-screen h1{margin-bottom:16px}
+  .setup-hero{
+    margin-bottom:18px;
+  }
+  .setup-hero h1{margin-bottom:8px}
+  .setup-lead{
+    margin:0;
+    font-size:17px;
+    font-weight:700;
+    line-height:1.35;
+    opacity:.82;
+  }
+  .setup-step{
+    margin-bottom:18px;
+    padding:14px 12px 12px;
+    border:3px solid #ffffff;
+    border-radius:16px;
+    background:#0a0a0a;
+  }
+  .setup-step-head{
+    display:flex;
+    align-items:flex-start;
+    gap:12px;
+    margin-bottom:14px;
+  }
+  .setup-step-num{
+    flex:0 0 auto;
+    width:40px;
+    height:40px;
+    border:3px solid #ffffff;
+    border-radius:12px;
+    display:grid;
+    place-items:center;
+    font-size:20px;
+    font-weight:1000;
+    background:#ffffff;
+    color:#000000;
+  }
+  .setup-step-copy{min-width:0;flex:1}
+  .setup-step-copy h2{
+    margin:0;
+    font-size:22px;
+    font-weight:1000;
+    letter-spacing:-.02em;
+    line-height:1.15;
+  }
+  .setup-step-hint{
+    margin:6px 0 0;
+    font-size:15px;
+    font-weight:700;
+    line-height:1.35;
+    opacity:.78;
+  }
   .field{
     margin-bottom:14px;
   }
+  .field:last-child{margin-bottom:0}
   .field label{
     display:block;
     margin-bottom:6px;
@@ -63,6 +117,18 @@
   .field label .optional{
     font-weight:700;
     opacity:.55;
+  }
+  .field-hint{
+    margin:8px 0 0;
+    font-size:14px;
+    font-weight:700;
+    line-height:1.35;
+    opacity:.7;
+  }
+  .field.has-error input,
+  .field.has-error select{
+    border-color:#ff6b6b;
+    outline:2px solid #ff6b6b;
   }
   .field input,
   .field select,
@@ -88,8 +154,15 @@
     background-size:40px 40px;
   }
   .custom-fields.hidden{display:none}
+  .custom-intro{
+    margin:0 0 12px;
+    font-size:15px;
+    font-weight:700;
+    line-height:1.35;
+    opacity:.78;
+  }
   .toggle-field{
-    margin-bottom:14px;
+    margin-bottom:0;
   }
   .toggle-field.hidden{display:none}
   .toggle-field label{
@@ -107,6 +180,9 @@
     font-size:20px;
     font-weight:800;
     cursor:pointer;
+  }
+  .toggle-field .field-hint{
+    margin-top:8px;
   }
   .toggle-field input{
     position:absolute;
@@ -153,7 +229,10 @@
     border-radius:16px;
     padding:12px;
     margin-bottom:12px;
-    background:#0a0a0a;
+    background:#000000;
+  }
+  .rider-editor.is-incomplete{
+    border-color:#ffea00;
   }
   .rider-editor.is-collapsed{
     padding:8px 12px;
@@ -293,17 +372,40 @@
     text-align:center;
   }
   .setup-error.show{display:block}
+  .setup-ready{
+    margin:0 0 12px;
+    padding:12px;
+    border:3px solid #ffffff;
+    border-radius:12px;
+    background:#000000;
+    font-size:16px;
+    font-weight:800;
+    line-height:1.35;
+    text-align:center;
+  }
+  .setup-ready.is-ready{
+    background:#00e676;
+    color:#000000;
+    border-color:#00e676;
+  }
   .setup-note{
     margin:0 0 14px;
     font-size:15px;
     line-height:1.35;
     text-align:center;
+    font-weight:700;
+    opacity:.8;
   }
+  .setup-note.hidden{display:none}
   .setup-actions{
     display:grid;
     grid-template-columns:1fr 1fr;
     gap:10px;
   }
+  .setup-actions.single-action{
+    grid-template-columns:1fr;
+  }
+  .setup-actions .small[hidden]{display:none !important}
   .small{
     border:3px solid #ffffff;
     border-radius:12px;
@@ -956,51 +1058,89 @@
 </head>
 <body>
 <section class="screen setup-screen" id="setupScreen">
-  <h1>Lap Times</h1>
-  <div class="field">
-    <label for="coursePreset">Distance</label>
-    <select id="coursePreset">
-      <option value="one-lap">1 lap</option>
-      <option value="six-laps">6 laps</option>
-      <option value="twelve-laps">12 laps</option>
-      <option value="eighteen-laps">18 laps</option>
-      <option value="ten-mile">10 Miles (27.75 laps)</option>
-      <option value="custom">Custom</option>
-    </select>
-  </div>
-  <div class="custom-fields hidden" id="customFields">
-    <div class="field">
-      <label for="openingLaps">Opening Segment (Partial Lap, Optional)</label>
-      <input id="openingLaps" type="text" inputmode="decimal" value="0">
+  <header class="setup-hero">
+    <h1>Activity Setup</h1>
+    <p class="setup-lead">Three quick steps. You’ll tap riders’ cards on the next screen to time them.</p>
+  </header>
+
+  <section class="setup-step" aria-labelledby="setupStep1Title">
+    <div class="setup-step-head">
+      <span class="setup-step-num" aria-hidden="true">1</span>
+      <div class="setup-step-copy">
+        <h2 id="setupStep1Title">Choose the distance</h2>
+        <p class="setup-step-hint">Pick how many laps this race is. Most coaches use a preset.</p>
+      </div>
     </div>
-    <div class="field">
-      <label for="fullLaps">Full laps after opening segment</label>
-      <input id="fullLaps" type="text" inputmode="numeric" value="6">
+    <div class="field" id="coursePresetField">
+      <label for="coursePreset">Distance</label>
+      <select id="coursePreset">
+        <option value="one-lap">1 lap</option>
+        <option value="six-laps">6 laps</option>
+        <option value="twelve-laps">12 laps</option>
+        <option value="eighteen-laps">18 laps</option>
+        <option value="ten-mile">10 Miles (27.75 laps)</option>
+        <option value="custom">Custom (set your own)</option>
+      </select>
     </div>
-  </div>
-  <div class="toggle-field" id="finalLapBellField">
-    <label for="finalLapBellToggle">
-      <span>Last lap bell</span>
-      <input id="finalLapBellToggle" type="checkbox" checked>
-      <span class="toggle-box" aria-hidden="true"></span>
-    </label>
-  </div>
-  <div id="riderEditors"></div>
-  <button class="add-rider" id="addRiderBtn" type="button">+ Add rider</button>
-  <p class="rider-limit hidden" id="riderLimitNote" role="status">Maximum of 4 riders reached</p>
-  <p class="setup-error" id="setupError"></p>
-  <p class="setup-note">Changing rider details keeps current laps. Changing the number of laps clears times.</p>
-  <div class="setup-actions">
-    <button class="small" id="setupCancelBtn" type="button">Cancel</button>
-    <button class="small confirm-save" id="setupSaveBtn" type="button">Save</button>
-  </div>
+    <div class="custom-fields hidden" id="customFields">
+      <p class="custom-intro">Use this if riders start part-way round the track, or for an unusual lap count.</p>
+      <div class="field">
+        <label for="openingLaps">Part-lap at the start <span class="optional">(optional)</span></label>
+        <input id="openingLaps" type="text" inputmode="decimal" value="0" autocomplete="off">
+        <p class="field-hint">Leave as 0 if they start on the start/finish line. Example: 0.75 means a three-quarter opening lap.</p>
+      </div>
+      <div class="field">
+        <label for="fullLaps">Full laps after that</label>
+        <input id="fullLaps" type="text" inputmode="numeric" value="6" autocomplete="off">
+        <p class="field-hint">Whole laps after any opening part-lap. Must be at least 1.</p>
+      </div>
+    </div>
+    <div class="toggle-field" id="finalLapBellField">
+      <label for="finalLapBellToggle">
+        <span>Last lap bell</span>
+        <input id="finalLapBellToggle" type="checkbox" checked>
+        <span class="toggle-box" aria-hidden="true"></span>
+      </label>
+      <p class="field-hint">When on, the phone rings a bell as each rider starts their final lap.</p>
+    </div>
+  </section>
+
+  <section class="setup-step" aria-labelledby="setupStep2Title">
+    <div class="setup-step-head">
+      <span class="setup-step-num" aria-hidden="true">2</span>
+      <div class="setup-step-copy">
+        <h2 id="setupStep2Title">Add your riders</h2>
+        <p class="setup-step-hint">Type each rider’s name. Add up to 4. Tap a rider to open or close their details.</p>
+      </div>
+    </div>
+    <div id="riderEditors"></div>
+    <button class="add-rider" id="addRiderBtn" type="button">+ Add another rider</button>
+    <p class="rider-limit hidden" id="riderLimitNote" role="status">Maximum of 4 riders — remove one to add someone else</p>
+  </section>
+
+  <section class="setup-step" aria-labelledby="setupStep3Title">
+    <div class="setup-step-head">
+      <span class="setup-step-num" aria-hidden="true">3</span>
+      <div class="setup-step-copy">
+        <h2 id="setupStep3Title">Start timing</h2>
+        <p class="setup-step-hint">When every rider has a name, press the green button.</p>
+      </div>
+    </div>
+    <p class="setup-ready" id="setupReady" role="status"></p>
+    <p class="setup-error" id="setupError"></p>
+    <p class="setup-note" id="setupNote">Changing a rider’s name or colour keeps times already recorded. Changing the distance clears all times and starts a fresh session.</p>
+    <div class="setup-actions" id="setupActions">
+      <button class="small" id="setupCancelBtn" type="button">Back</button>
+      <button class="small confirm-save" id="setupSaveBtn" type="button">Start timing</button>
+    </div>
+  </section>
 </section>
 
 <section class="screen timing-screen" id="timingScreen">
   <div class="timing-header">
     <h1>Lap Times</h1>
     <button class="small install-chip" id="installChip" type="button">Install</button>
-    <button class="small setup-btn" id="setupBtn" type="button" aria-label="Rider settings">
+    <button class="small setup-btn" id="setupBtn" type="button" aria-label="Activity Setup">
       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
         <path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M11.078 2.25c-.917 0-1.699.663-1.85 1.567l-.144.866a8.1 8.1 0 0 0-1.335.775l-.82-.36c-.85-.372-1.845-.05-2.35.76l-.922 1.48c-.505.81-.28 1.877.518 2.495l.72.56a8.2 8.2 0 0 0-.05 1.545l-.72.56c-.798.618-1.023 1.685-.518 2.495l.922 1.48c.505.81 1.5 1.132 2.35.76l.82-.36c.41.32.86.58 1.335.775l.144.866c.151.904.933 1.567 1.85 1.567h1.844c.917 0 1.699-.663 1.85-1.567l.144-.866a8.1 8.1 0 0 0 1.335-.775l.82.36c.85.372 1.845.05 2.35-.76l.922-1.48c.505-.81.28-1.877-.518-2.495l-.72-.56a8.2 8.2 0 0 0 .05-1.545l.72-.56c.798-.618 1.023-1.685.518-2.495l-.922-1.48c-.505-.81-1.5-1.132-2.35-.76l-.82.36a8.1 8.1 0 0 0-1.335-.775l-.144-.866c.151-.904-.933-1.567-1.85-1.567h-1.844ZM12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z"/>
       </svg>
@@ -1108,9 +1248,9 @@
       </svg>
     </button>
     <h2 class="modal-title" id="setupWarnTitle">Clear current times?</h2>
-    <p class="modal-text">Changing the number of laps starts a new session and wipes times already recorded.</p>
+    <p class="modal-text">You’re changing the race distance. That wipes any starts, laps and finishes already recorded, then starts a fresh session.</p>
     <div class="modal-actions">
-      <button class="small confirm-save" id="setupWarnConfirmBtn" type="button">Save</button>
+      <button class="small confirm-save" id="setupWarnConfirmBtn" type="button">Yes, clear times &amp; save</button>
     </div>
   </div>
 </div>
