@@ -787,11 +787,13 @@
     note.classList.toggle("hidden", !sessionUnderway());
   }
 
-  function focusRiderName(index){
-    const input = riderEditors.querySelector(`#riderBody${index} [data-field="name"]`);
-    if(!input) return;
-    input.focus({ preventScroll: true });
-    input.scrollIntoView({ behavior: "smooth", block: "center" });
+  function revealSetupField(el){
+    if(!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function revealRiderName(index){
+    revealSetupField(riderEditors.querySelector(`#riderBody${index} [data-field="name"]`));
   }
 
   function presetIdFromCourse(course){
@@ -878,9 +880,6 @@
       wrap.querySelector(".rider-toggle").addEventListener("click", () => {
         expandedRiderIndex = expandedRiderIndex === index ? -1 : index;
         renderRiderEditors();
-        if(expandedRiderIndex === index){
-          requestAnimationFrame(() => focusRiderName(index));
-        }
       });
       wrap.querySelector('[data-field="name"]').addEventListener("input", e => {
         rider.name = e.target.value;
@@ -945,7 +944,7 @@
       const nameInput = riderEditors.querySelector(`#riderName${missingName}`);
       if(nameInput){
         nameInput.closest(".field")?.classList.add("has-error");
-        requestAnimationFrame(() => focusRiderName(missingName));
+        requestAnimationFrame(() => revealRiderName(missingName));
       }
       return `Rider ${missingName + 1} needs a name before you can start.`;
     }
@@ -965,10 +964,7 @@
         const idInput = riderEditors.querySelector(`#riderId${dupIndex}`);
         if(idInput){
           idInput.closest(".field")?.classList.add("has-error");
-          requestAnimationFrame(() => {
-            idInput.focus({ preventScroll: true });
-            idInput.scrollIntoView({ behavior: "smooth", block: "center" });
-          });
+          requestAnimationFrame(() => revealSetupField(idInput));
         }
       }
       return "Two riders share the same “what they look like” note. Change one so you can tell them apart.";
@@ -978,17 +974,17 @@
       const fullRaw = String($("fullLaps").value || "").trim();
       if(openingRaw !== "" && Number.isNaN(Number(openingRaw))){
         markSetupFieldError("openingLaps");
-        $("openingLaps").focus();
+        revealSetupField($("openingLaps"));
         return "Part-lap at the start must be a number (or leave it as 0).";
       }
       if(draft.course.openingLaps < 0){
         markSetupFieldError("openingLaps");
-        $("openingLaps").focus();
+        revealSetupField($("openingLaps"));
         return "Part-lap at the start cannot be negative.";
       }
       if(fullRaw === "" || Number.isNaN(parseInt(fullRaw, 10)) || parseInt(fullRaw, 10) < 1){
         markSetupFieldError("fullLaps");
-        $("fullLaps").focus();
+        revealSetupField($("fullLaps"));
         return "Enter how many full laps after the opening (at least 1).";
       }
     }
@@ -1781,7 +1777,7 @@
     draft.riders.push(blankRider(draft.riders.length));
     expandedRiderIndex = draft.riders.length - 1;
     renderRiderEditors();
-    requestAnimationFrame(() => focusRiderName(expandedRiderIndex));
+    requestAnimationFrame(() => revealRiderName(expandedRiderIndex));
   });
 
   $("setupSaveBtn").addEventListener("click", () => {
