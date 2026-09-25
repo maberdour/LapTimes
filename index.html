@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lap Times">
-<meta name="laptap-coach-version" content="laptap-coach-v105">
+<meta name="laptap-coach-version" content="laptap-coach-v106">
 <title>Lap Times</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=74">
@@ -625,6 +625,9 @@
     line-height:.9;
     white-space:nowrap;
   }
+  .grid[data-riders="4"] .card.finished .card-caption{
+    font-size:clamp(16px,9cqh,24px);
+  }
   .grid[data-riders="4"] .card-hint{
     font-size:clamp(11px,5cqh,14px);
   }
@@ -693,14 +696,14 @@
     padding:6px 0 2px;
   }
   .grid[data-riders="4"] .card-progress{
-    font-size:clamp(15px,min(6.5cqh,12cqw),24px);
+    font-size:clamp(17px,min(8cqh,14cqw),28px);
   }
   .grid[data-riders="4"] .card-lap{
     font-size:clamp(22px,min(10cqh,18cqw),40px);
   }
   .grid[data-riders="4"] .card-time,
   .grid[data-riders="4"] .card-avg{
-    font-size:clamp(14px,min(5.5cqh,9.4cqw),20px);
+    font-size:clamp(16px,min(7cqh,11cqw),22px);
   }
   .grid[data-riders="2"] .card,
   .grid[data-riders="3"] .card{
