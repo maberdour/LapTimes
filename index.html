@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lap Times">
-<meta name="laptap-coach-version" content="laptap-coach-v94">
+<meta name="laptap-coach-version" content="laptap-coach-v105">
 <title>Lap Times</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=74">
@@ -573,11 +573,57 @@
   .card.finished .card-status{
     gap:clamp(8px,3cqh,16px);
   }
+  .grid[data-riders="4"] .card{
+    display:grid;
+    grid-template-columns:minmax(0,1fr);
+    grid-template-rows:auto minmax(0,1fr) 40%;
+    grid-template-areas:
+      "name"
+      "status"
+      "footer";
+    align-items:stretch;
+    padding:10px 8px;
+  }
+  .grid[data-riders="4"] .card:not(.no-id){
+    grid-template-rows:auto auto minmax(0,1fr) 40%;
+    grid-template-areas:
+      "name"
+      "id"
+      "status"
+      "footer";
+  }
+  .grid[data-riders="4"] .card-name{grid-area:name}
+  .grid[data-riders="4"] .card-id{grid-area:id}
   .grid[data-riders="4"] .card-status{
+    grid-area:status;
     gap:clamp(1px,0.8cqh,4px);
+    min-height:0;
+  }
+  .grid[data-riders="4"] .card-footer{
+    grid-area:footer;
   }
   .grid[data-riders="4"] .card-laps{
     font-size:clamp(64px,min(40cqh,62cqw),140px);
+  }
+  .grid[data-riders="4"] .card.racing .card-status,
+  .grid[data-riders="4"] .card.final .card-status{
+    flex-direction:row;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    padding:8px 2px;
+  }
+  .grid[data-riders="4"] .card.racing .card-laps,
+  .grid[data-riders="4"] .card.final .card-laps{
+    font-size:clamp(56px,min(30cqh,30cqw),100px);
+    line-height:1;
+    padding:.16em .2em;
+  }
+  .grid[data-riders="4"] .card.racing .card-caption,
+  .grid[data-riders="4"] .card.final .card-caption{
+    font-size:clamp(22px,13cqw,32px);
+    line-height:.9;
+    white-space:nowrap;
   }
   .grid[data-riders="4"] .card-hint{
     font-size:clamp(11px,5cqh,14px);
@@ -597,32 +643,66 @@
     display:flex;
     flex-direction:column;
     align-items:flex-start;
-    gap:6px;
+    gap:2px;
     margin-top:2px;
   }
   .card-progress,
-  .card-time{
-    font-size:clamp(18px,9cqh,28px);
-    font-weight:800;
+  .card-lap,
+  .card-time,
+  .card-avg{
     font-variant-numeric:tabular-nums;
-    line-height:1;
+    line-height:1.05;
     white-space:nowrap;
     text-align:left;
   }
-  .grid[data-riders="1"] .card-name,
-  .grid[data-riders="2"] .card-name{
+  .card-progress{
+    font-size:clamp(14px,7cqh,26px);
+    font-weight:800;
+  }
+  .card-lap{
+    font-size:clamp(18px,10cqh,36px);
+    font-weight:1000;
+  }
+  .card-time,
+  .card-avg{
+    font-size:clamp(13px,6.5cqh,22px);
+    font-weight:800;
+  }
+  .grid[data-riders="1"] .card-name{
     font-size:clamp(26px,13cqh,44px);
   }
-  .grid[data-riders="1"] .card-id,
-  .grid[data-riders="2"] .card-id{
+  .grid[data-riders="1"] .card-id{
     font-size:clamp(13px,6cqh,20px);
   }
-  .grid[data-riders="1"] .card-progress,
-  .grid[data-riders="1"] .card-time,
-  .grid[data-riders="2"] .card-progress,
-  .grid[data-riders="2"] .card-time{
-    font-size:clamp(22px,11cqh,36px);
+  .grid[data-riders="1"] .card-progress{
+    font-size:clamp(20px,9cqh,32px);
   }
+  .grid[data-riders="1"] .card-lap{
+    font-size:clamp(28px,14cqh,48px);
+  }
+  .grid[data-riders="1"] .card-time,
+  .grid[data-riders="1"] .card-avg{
+    font-size:clamp(18px,8cqh,28px);
+  }
+  .grid[data-riders="4"] .card-footer{
+    height:100%;
+    min-height:0;
+    margin-top:0;
+    gap:0;
+    justify-content:space-evenly;
+    padding:6px 0 2px;
+  }
+  .grid[data-riders="4"] .card-progress{
+    font-size:clamp(15px,min(6.5cqh,12cqw),24px);
+  }
+  .grid[data-riders="4"] .card-lap{
+    font-size:clamp(22px,min(10cqh,18cqw),40px);
+  }
+  .grid[data-riders="4"] .card-time,
+  .grid[data-riders="4"] .card-avg{
+    font-size:clamp(14px,min(5.5cqh,9.4cqw),20px);
+  }
+  .grid[data-riders="2"] .card,
   .grid[data-riders="3"] .card{
     display:grid;
     grid-template-columns:1fr 1fr;
@@ -636,21 +716,25 @@
     align-items:start;
     padding:12px 14px;
   }
+  .grid[data-riders="2"] .card-name,
   .grid[data-riders="3"] .card-name{
     grid-area:name;
     font-size:clamp(20px,14cqh,32px);
     overflow-wrap:anywhere;
   }
+  .grid[data-riders="2"] .card-id,
   .grid[data-riders="3"] .card-id{
     grid-area:id;
     font-size:clamp(12px,6.5cqh,16px);
   }
+  .grid[data-riders="2"] .card.no-id,
   .grid[data-riders="3"] .card.no-id{
     grid-template-rows:auto 1fr;
     grid-template-areas:
       "name status"
       "footer status";
   }
+  .grid[data-riders="2"] .card-status,
   .grid[data-riders="3"] .card-status{
     grid-area:status;
     align-self:stretch;
@@ -659,35 +743,55 @@
     container-type:size;
     min-width:0;
   }
+  .grid[data-riders="2"] .card-footer,
   .grid[data-riders="3"] .card-footer{
     grid-area:footer;
     align-self:end;
     gap:4px;
   }
+  .grid[data-riders="2"] .card-laps,
   .grid[data-riders="3"] .card-laps{
     font-size:clamp(88px,min(80cqh,78cqw),180px);
   }
+  .grid[data-riders="2"] .card-caption,
   .grid[data-riders="3"] .card-caption{
     font-size:clamp(22px,14cqh,36px);
   }
+  .grid[data-riders="2"] .card.start .card-caption,
+  .grid[data-riders="2"] .card.to-line .card-caption,
+  .grid[data-riders="2"] .card.finished .card-caption,
   .grid[data-riders="3"] .card.start .card-caption,
   .grid[data-riders="3"] .card.to-line .card-caption,
   .grid[data-riders="3"] .card.finished .card-caption{
     font-size:clamp(28px,18cqh,48px);
   }
+  .grid[data-riders="2"] .card-hint,
   .grid[data-riders="3"] .card-hint{
     font-size:clamp(16px,9cqh,24px);
   }
+  .grid[data-riders="2"] .card-next,
   .grid[data-riders="3"] .card-next{
     font-size:clamp(20px,12cqh,32px);
   }
+  .grid[data-riders="2"] .card-next,
+  .grid[data-riders="2"] .card.to-line .card-caption,
   .grid[data-riders="3"] .card-next,
   .grid[data-riders="3"] .card.to-line .card-caption{
     white-space:normal;
   }
-  .grid[data-riders="3"] .card-progress,
-  .grid[data-riders="3"] .card-time{
-    font-size:clamp(18px,11cqh,26px);
+  .grid[data-riders="2"] .card-progress,
+  .grid[data-riders="3"] .card-progress{
+    font-size:clamp(18px,min(12cqh,7cqw),28px);
+  }
+  .grid[data-riders="2"] .card-lap,
+  .grid[data-riders="3"] .card-lap{
+    font-size:clamp(24px,min(16cqh,9cqw),40px);
+  }
+  .grid[data-riders="2"] .card-time,
+  .grid[data-riders="2"] .card-avg,
+  .grid[data-riders="3"] .card-time,
+  .grid[data-riders="3"] .card-avg{
+    font-size:clamp(16px,min(10cqh,5.2cqw),22px);
   }
   .card.finished{
     background:#ffffff;

@@ -209,6 +209,24 @@
     return session.riders.length > 0 && session.riders.every(r => session.finishedAt[r.id]);
   }
 
+  function currentLapMs(id, now){
+    const started = session.startedAt[id];
+    if(!started) return 0;
+    const crossings = session.crossings[id] || [];
+    const finished = session.finishedAt[id];
+    const done = Boolean(finished) || crossings.length >= neededCrossings(session.course);
+    if(!crossings.length) return (finished || now) - started;
+    if(done){
+      const prev = crossings.length > 1 ? crossings[crossings.length - 2] : started;
+      return crossings[crossings.length - 1] - prev;
+    }
+    return now - crossings[crossings.length - 1];
+  }
+
+  function formatAvgLap(avg){
+    return avg == null ? "—" : formatTime(avg);
+  }
+
   function riderView(rider, now){
     const id = rider.id;
     const started = session.startedAt[id];
@@ -216,11 +234,17 @@
     const crossings = session.crossings[id] || [];
     const opening = session.course.openingLaps > 0;
     const full = session.course.fullLaps;
-    const pack = (view, current) => Object.assign(view, {
-      current,
-      total: full,
-      progress: `${current}/${full}`
-    });
+    const pack = (view, current) => {
+      const stats = statsFor(rider);
+      const finishedView = view.status === "finished";
+      return Object.assign(view, {
+        current,
+        total: full,
+        progress: finishedView ? `${full} ${full === 1 ? "Lap" : "Laps"}` : `Lap ${current} of ${full}`,
+        lap: currentLapMs(id, now),
+        avg: stats ? stats.avg : null
+      });
+    };
     if(!started){
       return pack({ status: "start", label: "START", remaining: full, elapsed: 0 }, 0);
     }
@@ -1108,7 +1132,15 @@
         btn.style.borderColor = border;
       }
       const splitsHint = view.status === "finished" && !isOneLapCourse() ? ", tap for lap times" : "";
-      const ariaParts = [rider.name, rider.identifier, view.label, view.progress, formatTime(view.elapsed)].filter(Boolean);
+      const ariaParts = [
+        rider.name,
+        rider.identifier,
+        view.label,
+        view.progress,
+        view.status === "finished" ? "" : `current lap ${formatTime(view.lap)}`,
+        `total ${formatTime(view.elapsed)}`,
+        view.avg == null ? "" : `average lap ${formatTime(view.avg)}`
+      ].filter(Boolean);
       btn.setAttribute("aria-label", `${ariaParts.join(", ")}${splitsHint}`);
       btn.innerHTML = `
         <div class="card-name">${escapeHtml(rider.name)}</div>
@@ -1116,7 +1148,9 @@
         <div class="card-status">${statusMarkup(view)}</div>
         <div class="card-footer">
           <div class="card-progress">${view.progress}</div>
-          <div class="card-time">${formatTime(view.elapsed)}</div>
+          ${view.status === "finished" ? "" : `<div class="card-lap">${formatTime(view.lap)}</div>`}
+          <div class="card-time">Total: ${formatTime(view.elapsed)}</div>
+          <div class="card-avg">Avg Lap: ${formatAvgLap(view.avg)}</div>
         </div>
       `;
       btn.addEventListener("click", () => onCardTap(rider.id));
@@ -1139,8 +1173,12 @@
         const card = grid.querySelector(`[data-rider-id="${rider.id}"]`);
         if(!card) return;
         const view = riderView(rider, now);
+        const lapEl = card.querySelector(".card-lap");
         const timeEl = card.querySelector(".card-time");
-        if(timeEl) timeEl.textContent = formatTime(view.elapsed);
+        const avgEl = card.querySelector(".card-avg");
+        if(lapEl) lapEl.textContent = formatTime(view.lap);
+        if(timeEl) timeEl.textContent = `Total: ${formatTime(view.elapsed)}`;
+        if(avgEl) avgEl.textContent = `Avg Lap: ${formatAvgLap(view.avg)}`;
         if((flashUntil[rider.id] || 0) <= now) card.classList.remove("flash");
       });
     }
