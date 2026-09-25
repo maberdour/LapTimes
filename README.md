@@ -1,4 +1,4 @@
-# LapTap for Coaches
+# LapTimes
 
 A phone-first timing app for coaches. Time up to four riders at once, on the track, with large tap targets and no network required after install.
 
