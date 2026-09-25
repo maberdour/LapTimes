@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="Lap Times">
-<meta name="laptap-coach-version" content="laptap-coach-v106">
+<meta name="laptap-coach-version" content="laptap-coach-v107">
 <title>Lap Times</title>
 <link rel="manifest" href="./manifest.json">
 <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32.png?v=74">
@@ -709,15 +709,32 @@
   .grid[data-riders="3"] .card{
     display:grid;
     grid-template-columns:1fr 1fr;
+    column-gap:8px;
+    row-gap:4px;
+    align-items:start;
+    padding:12px 14px;
+  }
+  .grid[data-riders="3"] .card{
     grid-template-rows:auto auto 1fr;
     grid-template-areas:
       "name status"
       "id status"
       "footer status";
-    column-gap:8px;
-    row-gap:4px;
-    align-items:start;
-    padding:12px 14px;
+  }
+  .grid[data-riders="2"] .card{
+    grid-template-rows:auto auto 1fr;
+    grid-template-areas:
+      "name name"
+      "id status"
+      "footer status";
+  }
+  .grid[data-riders="2"] .card.finished{
+    grid-template-rows:auto auto minmax(0,1fr) auto;
+    grid-template-areas:
+      "name name"
+      "id id"
+      "status status"
+      "footer footer";
   }
   .grid[data-riders="2"] .card-name,
   .grid[data-riders="3"] .card-name{
@@ -725,17 +742,33 @@
     font-size:clamp(20px,14cqh,32px);
     overflow-wrap:anywhere;
   }
+  .grid[data-riders="2"] .card-name{
+    justify-self:stretch;
+    text-align:left;
+  }
   .grid[data-riders="2"] .card-id,
   .grid[data-riders="3"] .card-id{
     grid-area:id;
     font-size:clamp(12px,6.5cqh,16px);
   }
-  .grid[data-riders="2"] .card.no-id,
   .grid[data-riders="3"] .card.no-id{
     grid-template-rows:auto 1fr;
     grid-template-areas:
       "name status"
       "footer status";
+  }
+  .grid[data-riders="2"] .card.no-id{
+    grid-template-rows:auto 1fr;
+    grid-template-areas:
+      "name name"
+      "footer status";
+  }
+  .grid[data-riders="2"] .card.finished.no-id{
+    grid-template-rows:auto minmax(0,1fr) auto;
+    grid-template-areas:
+      "name name"
+      "status status"
+      "footer footer";
   }
   .grid[data-riders="2"] .card-status,
   .grid[data-riders="3"] .card-status{
@@ -745,6 +778,14 @@
     gap:clamp(2px,1.5cqh,6px);
     container-type:size;
     min-width:0;
+  }
+  .grid[data-riders="2"] .card.finished .card-status{
+    width:100%;
+  }
+  .grid[data-riders="2"] .card.finished .card-caption,
+  .grid[data-riders="2"] .card.finished .card-hint{
+    width:100%;
+    text-align:center;
   }
   .grid[data-riders="2"] .card-footer,
   .grid[data-riders="3"] .card-footer{
